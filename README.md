@@ -12,10 +12,10 @@ Then, if the block is not the first block, have to sum $b$ ones times the number
 
 Thenk, depending of the value of `B[blk]` and `P[blk]` will use differente rank operation:
 
-* if `B[blk] = 1` the block use Elias-Fano Encoding, then:
+* if `B[blk] = 1` the block use Elias-Fano Encoding, so we will use rank operation to that encoding, then:
   * if the block is the first block can do the operation rank with the value of `i`
   * if the block is not the first block, then have to know the position of the `i` bit in that block, to do that have to do the difference between `i - 1` and the result of a select in `L` with the value of the block, to know what was the position of the last `1` from the previous block, and finally we can do rank with that value
-* if `B[blk] = 0 && P[blk] != NULL` the block use a plan bit vector encoding, then:
+* if `B[blk] = 0 && P[blk] != NULL` the block use a plan bit vector encoding, so we will use rank operation to that encoding, then:
   * if the block is the first block can do the operation rank with the value of `i`
   * if the block is not the first block, then have to know the position of the `i` bit in that block, to do that have to do the difference between `i - 1` and the result of a select in `L` with the value of the block, to know what was the position of the last `1` from the previous block, and finally we can do rank with that value
 * if `B[blk] = 0 && P[blk] == NULL` the block is full of ones, then:
