@@ -4,7 +4,11 @@
 
 ### rank operation
 
-Description: Given an position `i`, do `rank(i)`
+#### Description
+
+Given an position `i`, do `rank(i)`
+
+#### Algorithm
 
 The rank operation first at all have to do a rank in the vector `L` to know in which block the bit `i` is.
 
