@@ -44,10 +44,14 @@ public:
     return n;
   }
 
+  uint64_t n_blocks() {
+    return nBlocks;
+  }
+
   uint64_t size_in_bytes() {
     uint64_t size = sdsl::size_in_bytes(L) + sdsl::size_in_bytes(select_L) 
                   + sdsl::size_in_bytes(rank_L) 
-                  + sdsl::size_in_bytes(B) + 3*sizeof(uint64_t) 
+                  + sdsl::size_in_bytes(B) + 3 * sizeof(uint64_t) 
                   + nBlocks*sizeof(void *);
         
     for (uint64_t i=0; i < nBlocks; ++i) {
@@ -183,7 +187,7 @@ public:
       } else {
         // block is a run of 1s
         if (blk == 0) {
-          return (i - 1) % b;
+          return (i - 1);
         } else {
           return select_L(blk) + (i - 1) % b + 1;
         }
@@ -193,8 +197,11 @@ public:
 
   uint64_t rank(uint64_t i) {
     if(i >= u) return n_ones();
-    
+
     uint64_t blk = rank_L(i); //obtain the block of the i bit
+
+    if(blk == nBlocks) return n_ones();
+    
     uint64_t rank_val = 0;
 
     if(blk > 0)
