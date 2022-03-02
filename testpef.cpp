@@ -23,7 +23,7 @@ int main() {
 
 
   cout << "---------------- PEF UNIF TESTS ----------------\n";
-  pef_vector_unif<264> pef(b);
+  pef_vector_unif<264, rank_support_scan<1>, select_support_scan<1>> pef(b);
 
   cout << "# Select\n";
   bool pass_tests = 1;
@@ -46,7 +46,7 @@ int main() {
 
   cout << "---------------- PEF OPTI TESTS ----------------\n";
 
-  pef_vector_opt pef_opt(b, 0.03, 0.3);
+  pef_vector_opt<rank_support_v5<1>, select_support_mcl<1>> pef_opt(b, 0.03, 0.3);
   cout << "# Select\n";
   pass_tests = 1;
   for (uint64_t i = 1; i <= n; i++) {
