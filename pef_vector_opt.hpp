@@ -280,8 +280,8 @@ class pef_vector_opt {
         } else {
           if (P[i]) {
             size += sdsl::size_in_bytes(*(bit_vector *)P[i]) 
-                  + sdsl::size_in_bytes(*(select_support_scan<1> *)block_select[i])
-                  + sdsl::size_in_bytes(*(rank_support_scan<1> *)block_rank[i]);
+                  + sdsl::size_in_bytes(*(select_support_mcl<1> *)block_select[i])
+                  + sdsl::size_in_bytes(*(rank_support_v5<1> *)block_rank[i]);
           }
         }
       }
@@ -404,8 +404,8 @@ class pef_vector_opt {
         } else if(type_encoding_block == 2) { 
           B[i] = 0;
           P[i] = new bit_vector(block_bv);
-          block_select[i] = new select_support_scan<1>((bit_vector *)P[i]); 
-          block_rank[i] = new rank_support_scan<1>((bit_vector *)P[i]); 
+          block_select[i] = new select_support_mcl<1>((bit_vector *)P[i]); 
+          block_rank[i] = new rank_support_v5<1>((bit_vector *)P[i]); 
         }
         start = end + 1;
         first_elem = partition[i];
@@ -442,8 +442,8 @@ class pef_vector_opt {
       } else if(type_encoding_block == 2) { 
         B[i] = 0;
         P[i] = new bit_vector(block_bv);
-        block_select[i] = new select_support_scan<1>((bit_vector *)P[i]); 
-        block_rank[i] = new rank_support_scan<1>((bit_vector *)P[i]); 
+        block_select[i] = new select_support_mcl<1>((bit_vector *)P[i]); 
+        block_rank[i] = new rank_support_v5<1>((bit_vector *)P[i]); 
       }
 
       L = sd_vector<>(elements_of_L.begin(), elements_of_L.end());
@@ -469,10 +469,10 @@ class pef_vector_opt {
       } else {
         if (P[blk]) {
           if (blk == 0) {
-            return (*(select_support_scan<1> *)block_select[blk])(i);
+            return (*(select_support_mcl<1> *)block_select[blk])(i);
           } else {
             uint64_t i_block = i - select_E(blk);
-            return select_L(blk) + 1 + (*(select_support_scan<1> *)block_select[blk])(i_block);
+            return select_L(blk) + 1 + (*(select_support_mcl<1> *)block_select[blk])(i_block);
           }
         } else {
           // block is a run of 1s
@@ -510,11 +510,11 @@ class pef_vector_opt {
       } else {
         if (P[blk]) {
           if(blk == 0){
-            rank_val += (*(rank_support_scan<1> *)block_rank[blk])(i);
+            rank_val += (*(rank_support_v5<1> *)block_rank[blk])(i);
           } else{
             //obtain position in the block
             uint64_t i_block = i - 1 - select_L(blk);
-            rank_val += (*(rank_support_scan<1> *)block_rank[blk])(i_block);
+            rank_val += (*(rank_support_v5<1> *)block_rank[blk])(i_block);
           }
         } else {
           // block is a run of 1s
