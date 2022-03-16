@@ -32,11 +32,11 @@ class cost_window {
     }
 
     uint64_t universe() const {
-        return _max_p - _min_p + 1;
+      return _max_p - _min_p + 1;
     }
 
     uint64_t size() const {
-        return _end - _start;
+      return _end - _start;
     }
 
     void advance_start() {
@@ -71,7 +71,6 @@ class cost_window {
            << _max_p << " "  
            << _cost_upper_bound << "\n";
     }
-
 };
 
 static const uint64_t type_bits = 1; // all_ones is implicit
@@ -290,6 +289,83 @@ class pef_vector_opt {
       return size;
     }
 
+    std::pair<std::vector<uint64_t>, uint64_t> optimal_partition(std::vector<uint64_t> ones_bv, double eps1, double eps2){
+      uint64_t single_block_cost = cost_fun(u, n);   
+      std::vector<uint64_t> min_cost(n+1, single_block_cost);
+      min_cost[0] = 0;
+
+      // create the required window: one for each power of approx_factor
+      std::vector<cost_window> windows;
+      uint64_t cost_lb = cost_fun(1, 1); // minimum cost
+      uint64_t cost_bound = cost_lb;
+
+      while (eps1 == 0 || cost_bound < cost_lb / eps1) {
+        windows.emplace_back(ones_bv.begin(), cost_bound);
+        if (cost_bound >= single_block_cost) break;
+        cost_bound = cost_bound * (1 + eps2);
+      }
+
+      std::vector<uint64_t> path(n + 1, 0);
+        
+      for (uint64_t i = 0; i < n; i++) {
+        size_t last_end = i + 1;
+        for (auto& window: windows) {
+
+          assert(window.start() == i);
+          while (window.end() < last_end) {
+            window.advance_end();
+          }
+
+          uint64_t window_cost;
+          while (true) {
+            window_cost = cost_fun(window.universe(), window.size());
+            if (min_cost[i] + window_cost < min_cost[window.end()]) {
+              min_cost[window.end()] = min_cost[i] + window_cost;
+              path[window.end()] = i;
+            }
+            last_end = window.end();
+            if (window.end() == n) break;
+            if (window_cost >= window.cost_upper_bound()) break;
+            window.advance_end();
+          }
+          window.advance_start();
+        }
+      }
+
+      uint64_t curr_pos = n;
+      std::vector<uint64_t> partition;
+      while (curr_pos != 0) {
+        partition.push_back(curr_pos);
+        curr_pos = path[curr_pos];
+      }
+
+      std::reverse(partition.begin(), partition.end());
+      uint64_t cost_opt = min_cost[n];
+      return {partition, cost_opt};
+    }
+
+    void add_block(sdsl::bit_vector &block_bv, int64_t type_encoding_block, uint64_t i){
+      //all ones
+      if(type_encoding_block == 0) {
+        B[i] = 0;
+        P[i] = NULL; 
+        block_select[i] = NULL;
+        block_rank[i] = NULL;
+      //elias-fano
+      } else if(type_encoding_block == 1) {
+        B[i] = 1;
+        P[i] = new sd_vector<>(block_bv);
+        block_select[i] = new select_support_sd<1>((sd_vector<> *)P[i]);
+        block_rank[i] = new rank_support_sd<1>((sd_vector<> *)P[i]);
+      //rb
+      } else if(type_encoding_block == 2) { 
+        B[i] = 0;
+        P[i] = new bit_vector(block_bv);
+        block_select[i] = new select_support((bit_vector *)P[i]); 
+        block_rank[i] = new rank_support((bit_vector *)P[i]); 
+      }
+    }
+
     pef_vector_opt(sdsl::bit_vector &bv, double eps1, double eps2) {
       select_support select_1(&bv);
       rank_support rank_1(&bv);
@@ -305,58 +381,9 @@ class pef_vector_opt {
         ones_bv.push_back(select_1(i+1));
 
       //----- Optimal partition -----
-        uint64_t single_block_cost = cost_fun(u, n);   
-        std::vector<uint64_t> min_cost(n+1, single_block_cost);
-        min_cost[0] = 0;
-
-        // create the required window: one for each power of approx_factor
-        std::vector<cost_window> windows;
-        uint64_t cost_lb = cost_fun(1, 1); // minimum cost
-        uint64_t cost_bound = cost_lb;
-
-        while (eps1 == 0 || cost_bound < cost_lb / eps1) {
-          windows.emplace_back(ones_bv.begin(), cost_bound);
-          if (cost_bound >= single_block_cost) break;
-          cost_bound = cost_bound * (1 + eps2);
-        }
-
-        std::vector<uint64_t> path(n + 1, 0);
-          
-        for (uint64_t i = 0; i < n; i++) {
-          size_t last_end = i + 1;
-          for (auto& window: windows) {
-
-            assert(window.start() == i);
-            while (window.end() < last_end) {
-              window.advance_end();
-            }
-
-            uint64_t window_cost;
-            while (true) {
-              window_cost = cost_fun(window.universe(), window.size());
-              if (min_cost[i] + window_cost < min_cost[window.end()]) {
-                min_cost[window.end()] = min_cost[i] + window_cost;
-                path[window.end()] = i;
-              }
-              last_end = window.end();
-              if (window.end() == n) break;
-              if (window_cost >= window.cost_upper_bound()) break;
-              window.advance_end();
-            }
-
-            window.advance_start();
-          }
-        }
-
-        uint64_t curr_pos = n;
-        std::vector<uint64_t> partition;
-        while (curr_pos != 0) {
-          partition.push_back(curr_pos);
-          curr_pos = path[curr_pos];
-        }
-
-        std::reverse(partition.begin(), partition.end());
-        uint64_t cost_opt = min_cost[n];
+      pair<std::vector<uint64_t>, uint64_t> ret = optimal_partition(ones_bv, eps1, eps2);
+      std::vector<uint64_t> partition = ret.first;
+      uint64_t cost_opt = ret.second;
       //-----------------------------
 
       nBlocks = partition.size(); // OJO, ver esto, el tamaño de ese vector debería ser el número de bloques
@@ -389,25 +416,7 @@ class pef_vector_opt {
         elements_of_E.push_back(amount_ones + (i == 0 ? 0 : elements_of_E[i - 1]));
 
         uint64_t type_encoding_block = type_encoding(elem - first_elem + 1, amount_ones);
-        //all ones
-        if(type_encoding_block == 0) {
-          B[i] = 0;
-          P[i] = NULL; 
-          block_select[i] = NULL;
-          block_rank[i] = NULL;
-        //elias-fano
-        } else if(type_encoding_block == 1) {
-          B[i] = 1;
-          P[i] = new sd_vector<>(block_bv);
-          block_select[i] = new select_support_sd<1>((sd_vector<> *)P[i]);
-          block_rank[i] = new rank_support_sd<1>((sd_vector<> *)P[i]);
-        //rb
-        } else if(type_encoding_block == 2) { 
-          B[i] = 0;
-          P[i] = new bit_vector(block_bv);
-          block_select[i] = new select_support((bit_vector *)P[i]); 
-          block_rank[i] = new rank_support((bit_vector *)P[i]); 
-        }
+        add_block(block_bv, type_encoding_block, i);
         start = end + 1;
         first_elem = partition[i];
       }
@@ -427,25 +436,83 @@ class pef_vector_opt {
       elements_of_L.push_back(temp);
       elements_of_E.push_back(amount_ones + (nBlocks == 1 ? 0 : elements_of_E[i - 1]));
       uint64_t type_encoding_block = type_encoding(elem - first_elem + 1, amount_ones);
-      //all ones
-      if(type_encoding_block == 0) {
-        B[i] = 0;
-        P[i] = NULL; 
-        block_select[i] = NULL;
-        block_rank[i] = NULL;
-      //elias-fano
-      } else if(type_encoding_block == 1) {
-        B[i] = 1;
-        P[i] = new sd_vector<>(block_bv);
-        block_select[i] = new select_support_sd<1>((sd_vector<> *)P[i]);
-        block_rank[i] = new rank_support_sd<1>((sd_vector<> *)P[i]);
-      //rb
-      } else if(type_encoding_block == 2) { 
-        B[i] = 0;
-        P[i] = new bit_vector(block_bv);
-        block_select[i] = new select_support((bit_vector *)P[i]); 
-        block_rank[i] = new rank_support((bit_vector *)P[i]); 
+      add_block(block_bv, type_encoding_block, i);
+
+      L = sd_vector<>(elements_of_L.begin(), elements_of_L.end());
+      util::init_support(select_L, &L);
+      util::init_support(rank_L, &L);
+
+      E = sd_vector<>(elements_of_E.begin(), elements_of_E.end());
+      util::init_support(select_E, &E);
+      util::init_support(rank_E, &E);
+    } 
+
+    pef_vector_opt(std::vector<uint64_t> &pb, uint64_t universe, double eps1, double eps2) {
+      sdsl::bit_vector block_bv;
+      std::vector<uint64_t> elements_of_L;
+      std::vector<uint64_t> elements_of_E;
+
+      u = universe;
+      n = pb.size();
+
+      //----- Optimal partition -----
+      pair<std::vector<uint64_t>, uint64_t> ret = optimal_partition(pb, eps1, eps2);
+      std::vector<uint64_t> partition = ret.first;
+      uint64_t cost_opt = ret.second;
+      //-----------------------------
+
+      nBlocks = partition.size(); // OJO, ver esto, el tamaño de ese vector debería ser el número de bloques
+
+      P.resize(nBlocks, NULL);
+      block_select.resize(nBlocks, NULL);
+      block_rank.resize(nBlocks, NULL);
+
+      B = bit_vector(nBlocks, 0);
+
+      uint64_t start = 0;
+      uint64_t first_elem = 1;
+
+      uint64_t last_elem, end, size_block, i;
+      for(i = 0; i < nBlocks - 1; i++){
+        last_elem = partition[i];
+        end = pb[last_elem - 1 - 1];
+        size_block = end - start + 1;
+
+        block_bv.resize(size_block);
+        sdsl::util::set_to_value(block_bv, 0);
+
+        //last element is not include
+        uint64_t amount_ones, elem, temp;
+        for(elem = first_elem, amount_ones = 0; elem < last_elem; elem++, amount_ones++) {
+          temp = pb[elem - 1];
+          block_bv[temp - start] = 1;
+        }
+        elements_of_L.push_back(temp);
+        elements_of_E.push_back(amount_ones + (i == 0 ? 0 : elements_of_E[i - 1]));
+
+        uint64_t type_encoding_block = type_encoding(elem - first_elem + 1, amount_ones);
+        add_block(block_bv, type_encoding_block, i);
+        start = end + 1;
+        first_elem = partition[i];
       }
+      // last block
+      last_elem = partition[i];
+      end = u;
+      size_block = end - start;
+
+      block_bv.resize(size_block);
+      sdsl::util::set_to_value(block_bv, 0);
+
+      uint64_t amount_ones, elem, temp;
+      for(elem = first_elem, amount_ones = 0; elem <= last_elem; elem++, amount_ones++) {
+        //cout << elem << " " << pb.size() << "\n";
+        temp = pb[elem - 1];
+        block_bv[temp - start] = 1;
+      }
+      elements_of_L.push_back(temp);
+      elements_of_E.push_back(amount_ones + (nBlocks == 1 ? 0 : elements_of_E[i - 1]));
+      uint64_t type_encoding_block = type_encoding(elem - first_elem + 1, amount_ones);
+      add_block(block_bv, type_encoding_block, i);
 
       L = sd_vector<>(elements_of_L.begin(), elements_of_L.end());
       util::init_support(select_L, &L);
@@ -493,12 +560,12 @@ class pef_vector_opt {
       if(i >= u) return n_ones();
 
       uint64_t blk = rank_L(i);
-
       if(blk == nBlocks) return n_ones();
 
       uint64_t rank_val = 0;
 
-      rank_val += select_E(blk);
+      if(blk > 0)
+        rank_val += select_E(blk);
 
       if (B[blk]) {
         if(blk == 0){
@@ -526,6 +593,7 @@ class pef_vector_opt {
           }
         }
       }
+      return rank_val;
     }
 };
 

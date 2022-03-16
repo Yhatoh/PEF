@@ -159,6 +159,94 @@ public:
       block_rank[i] = new rank_support_sd<1>((sd_vector<> *)P[i]);
     }
 
+    L = sd_vector<>(elements_of_L.begin(), elements_of_L.end());
+    util::init_support(select_L, &L);
+    util::init_support(rank_L, &L);
+  }
+
+  pef_vector_unif(std::vector<uint64_t> &pb, uint64_t universe) {
+    
+    bit_vector block_bv;
+    std::vector<uint64_t> elements_of_L;
+
+    u = universe;
+    n = pb.size();
+    nBlocks = (n + b - 1) / b;
+          
+          
+    P.resize(nBlocks, NULL);
+    block_select.resize(nBlocks, NULL); 
+    block_rank.resize(nBlocks, NULL); 
+
+    B = bit_vector(nBlocks, 0);
+
+    uint64_t next_elem, nElems, start = 0, univ_size_block, i, temp;
+
+    //cout << "Number of 1s = " << n << " Number of blocks = " << nBlocks << endl;
+    for (i = 0; i < nBlocks - 1; i++) {
+      //cout << "last 1 in block " << pb[(i + 1) * b - 1] << endl; 
+      univ_size_block = pb[(i + 1) * b - 1] - start + 1;
+
+      //cout << "Block " << i << " universe size " << univ_size_block << endl;
+      block_bv.resize(univ_size_block);
+      sdsl::util::set_to_value(block_bv, 0);
+
+      for (next_elem = i * b + 1, nElems = 0; nElems < b; ++nElems, ++next_elem) {
+        temp = pb[next_elem - 1];
+        block_bv[temp - start] = 1;
+      }
+      elements_of_L.push_back(temp);
+      // Now, chooses the encoding of the block
+      if (univ_size_block == b) {
+        B[i] = 0;
+        P[i] = NULL; 
+        block_select[i] = NULL;
+        block_rank[i] = NULL;
+      } else if (b > univ_size_block/4) {
+        B[i] = 0;
+        P[i] = new bit_vector(block_bv);
+        block_select[i] = new select_support((bit_vector *)P[i]); 
+        block_rank[i] = new rank_support((bit_vector *)P[i]); 
+      } else {
+        B[i] = 1;
+        P[i] = new sd_vector<>(block_bv);
+        block_select[i] = new select_support_sd<1>((sd_vector<> *)P[i]);
+        block_rank[i] = new rank_support_sd<1>((sd_vector<> *)P[i]);
+      }
+
+      //cout << "next elem " << next_elem << endl;
+      start = pb[next_elem - 1 - 1] + 1;
+      //cout << "start " << start << endl;
+    }
+
+    // last block
+    univ_size_block = u - start;  // revisar esta formula
+    block_bv.resize(univ_size_block);
+    sdsl::util::set_to_value(block_bv, 0);
+
+    for(next_elem = i * b + 1; next_elem <= n; next_elem++) {
+      temp = pb[next_elem - 1];
+      block_bv[temp - start] = 1;
+    }
+
+    elements_of_L.push_back(temp);
+
+    if (univ_size_block == b) {
+      B[i] = 0;
+      P[i] = NULL; 
+      block_select[i] = NULL;
+      block_rank[i] = NULL;
+    } else if (b > univ_size_block / 4) {
+      B[i] = 0;
+      P[i] = new bit_vector(block_bv);
+      block_select[i] = new select_support((bit_vector *)P[i]); 
+      block_rank[i] = new rank_support((bit_vector *)P[i]); 
+    } else {
+      B[i] = 1;
+      P[i] = new sd_vector<>(block_bv);
+      block_select[i] = new select_support_sd<1>((sd_vector<> *)P[i]);
+      block_rank[i] = new rank_support_sd<1>((sd_vector<> *)P[i]);
+    }
 
     L = sd_vector<>(elements_of_L.begin(), elements_of_L.end());
     util::init_support(select_L, &L);
