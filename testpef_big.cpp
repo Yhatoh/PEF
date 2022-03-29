@@ -10,8 +10,9 @@ int main() {
     pb.push_back(pos);
   }
 
+  cout << "-\n";
   pef_vector_unif<1024, rank_support_v5<1>, select_support_mcl<1>> pef_unif(pb, N);
   cout << "Size PEF UNIF BIT VECTOR " << pef_unif.size_in_bytes() << "\n";
-  
+
   return 0;
 }

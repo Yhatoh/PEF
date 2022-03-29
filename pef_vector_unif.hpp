@@ -325,6 +325,17 @@ public:
     
 
     return rank_val;
+  }
+
+  uint64_t access(uint64_t i){
+    //if i >= u doesn't make sense
+    
+    uint64_t amount_ones = rank(i + 1);
+    if(amount_ones == 0) return 0;
+     
+    uint64_t pos_last_one = select(amount_ones);
+    if(pos_last_one < i) return 0;
+    else return 1; 
   }  
 };
 
