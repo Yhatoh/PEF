@@ -125,13 +125,13 @@ inline uint64_t ceil_log2(const uint64_t x) {
   return (x > 1) ? msb(x - 1) + 1 : 0;
 }
 
-uint64_t bitsize_elias_fano(uint64_t universe, uint64_t n){
+uint64_t bitsize_plain_bitvector(uint64_t universe, uint64_t n){
   // global parameters
-  uint64_t ef_log_sampling0 = 9; // cuidado con esto
-  uint64_t ef_log_sampling1 = 8; // cuidado con esto
+  uint64_t rb_log_sampling0 = 9; // cuidado con esto
+  uint64_t rb_log_sampling1 = 8; // cuidado con esto
 
-  uint64_t log_sampling0 = ef_log_sampling0; // cuidado con esto
-  uint64_t log_sampling1 = ef_log_sampling1; // cuidado con esto
+  uint64_t log_sampling0 = rb_log_sampling0; // cuidado con esto
+  uint64_t log_sampling1 = rb_log_sampling1; // cuidado con esto
 
   uint64_t lower_bits = universe > n ? msb(universe / n) : 0;
 
@@ -149,14 +149,14 @@ uint64_t bitsize_elias_fano(uint64_t universe, uint64_t n){
   return lower_bits_offset + n * lower_bits;
 }
 
-uint64_t bitsize_plain_bitvector(uint64_t universe, uint64_t n){
+uint64_t bitsize_elias_fano(uint64_t universe, uint64_t n){
   //global parameters
-  uint64_t rb_log_rank1_sampling = 9; // cuidado con esto
-  uint64_t rb_log_sampling1 = 8; // cuidado con esto
+  uint64_t ef_log_rank1_sampling = 9; // cuidado con esto
+  uint64_t ef_log_sampling1 = 8; // cuidado con esto
   uint64_t log_partition_size = 7; // cuidado con esto
 
-  uint64_t log_rank1_sampling = rb_log_rank1_sampling; // cuidado con esto
-  uint64_t log_sampling1 = rb_log_sampling1;      // cuidado con esto
+  uint64_t log_rank1_sampling = ef_log_rank1_sampling; // cuidado con esto
+  uint64_t log_sampling1 = ef_log_sampling1;      // cuidado con esto
 
   uint64_t rank1_sample_size = ceil_log2(n + 1);
   uint64_t pointer_size = ceil_log2(universe);
