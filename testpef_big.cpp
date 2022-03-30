@@ -10,7 +10,7 @@ int main() {
   bit_vector b(N);
   uint64_t pos;
 
-  ofstream rf("/data/bitvectors/ii/gov2/url/gov2_ii_nofreq_url_dif.txt.dat.100000", std::ios::binary);
+  ifstream rf("/data/bitvectors/ii/gov2/url/gov2_ii_nofreq_url_dif.txt.dat.100000", std::ios::binary);
 
   if(!rf){
     std::cout << "Cannot open file!\n";
@@ -25,10 +25,10 @@ int main() {
   rf.close();
   
   sd_vector<> sd(b);
-  cout << "Size PEF SD_VECTOR " << size_in_bytes(sd) << "\n"; 
+  cout << "Size PEF SD_VECTOR " << size_in_bytes(sd) << " " << ((double) (size_in_bytes(sd) * 8)) / ((double)pb.size()) << "\n";
   pef_vector_unif<1024, rank_support_v5<1>, select_support_mcl<1>> pef_unif(pb, N);
-  cout << "Size PEF UNIF BIT VECTOR POS ONES " << pef_unif.size_in_bytes() << "\n";
-  pef_vector_opt<rank_support_v5<1>, select_support_mcl<1>> pef_opt(pb, N);
-  cout << "Size PEF OPT BIT VECTOR POS ONES " << pef_opt.size_in_bytes() << "\n";
+  cout << "Size PEF UNIF BIT VECTOR POS ONES " << pef_unif.size_in_bytes() << " " << ((double) (pef_unif.size_in_bytes() * 8)) / ((double)pb.size()) << "\n";
+  pef_vector_opt<rank_support_v5<1>, select_support_mcl<1>> pef_opt(pb, N, 0.03, 0.3);
+  cout << "Size PEF OPT BIT VECTOR POS ONES " << pef_opt.size_in_bytes() << " " << ((double) (pef_opt.size_in_bytes() * 8)) / ((double)pb.size()) << "\n";
   return 0;
 }

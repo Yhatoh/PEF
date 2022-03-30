@@ -114,7 +114,7 @@ inline uint8_t msb(uint64_t x, unsigned long& ret){
 
   return true;
 }
-
+ 
 inline uint8_t msb(uint64_t x){
   unsigned long ret = -1U;
   msb(x, ret);
@@ -127,47 +127,41 @@ inline uint64_t ceil_log2(const uint64_t x) {
 
 uint64_t bitsize_plain_bitvector(uint64_t universe, uint64_t n){
   // global parameters
-  uint64_t rb_log_sampling0 = 9; // cuidado con esto
+  uint64_t rb_log_rank1_sampling = 9; // cuidado con esto
   uint64_t rb_log_sampling1 = 8; // cuidado con esto
 
-  uint64_t log_sampling0 = rb_log_sampling0; // cuidado con esto
+  uint64_t log_rank1_sampling = rb_log_rank1_sampling; // cuidado con esto
   uint64_t log_sampling1 = rb_log_sampling1; // cuidado con esto
-
-  uint64_t lower_bits = universe > n ? msb(universe / n) : 0;
-
-  //uint64_t mask = (uint64_t(1) << lower_bits) - 1;
-  // pad with a zero on both sides as sentinels
-  uint64_t higher_bits_length = n + (universe >> lower_bits) + 2;
-  uint64_t pointer_size = ceil_log2(higher_bits_length);
-  uint64_t pointers0 = (higher_bits_length - n) >> log_sampling0;                
-  uint64_t pointers1 = n >> log_sampling1;
-  uint64_t pointers0_offset = 0; //(base_offset)
-  uint64_t pointers1_offset = pointers0_offset + pointers0 * pointer_size;
-  uint64_t higher_bits_offset = pointers1_offset + pointers1 * pointer_size;
-  uint64_t lower_bits_offset = higher_bits_offset + higher_bits_length;
-
-  return lower_bits_offset + n * lower_bits;
-}
-
-uint64_t bitsize_elias_fano(uint64_t universe, uint64_t n){
-  //global parameters
-  uint64_t ef_log_rank1_sampling = 9; // cuidado con esto
-  uint64_t ef_log_sampling1 = 8; // cuidado con esto
-  uint64_t log_partition_size = 7; // cuidado con esto
-
-  uint64_t log_rank1_sampling = ef_log_rank1_sampling; // cuidado con esto
-  uint64_t log_sampling1 = ef_log_sampling1;      // cuidado con esto
 
   uint64_t rank1_sample_size = ceil_log2(n + 1);
   uint64_t pointer_size = ceil_log2(universe);
   uint64_t rank1_samples = universe >> log_rank1_sampling;
   uint64_t pointers1 = n >> log_sampling1;
-
   uint64_t rank1_samples_offset = 0;
-
   uint64_t pointers1_offset = rank1_samples_offset + rank1_samples * rank1_sample_size;
   uint64_t bits_offset = pointers1_offset + pointers1 * pointer_size;
+  
   return bits_offset + universe;
+}
+
+uint64_t bitsize_elias_fano(uint64_t universe, uint64_t n){
+  //global parameters
+  uint64_t ef_log_sampling0 = 9; // cuidado con esto
+  uint64_t ef_log_sampling1 = 8; // cuidado con esto
+  uint64_t log_sampling0 = ef_log_sampling0;
+  uint64_t log_sampling1 = ef_log_sampling1;
+  uint64_t lower_bits = universe > n ? msb(universe / n) : 0;
+  uint64_t mask = (((uint64_t) 1) << lower_bits) - 1;
+  uint64_t higher_bits_length = n + (universe >> lower_bits) + 2;
+  uint64_t pointer_size = ceil_log2(higher_bits_length);
+  uint64_t pointers0 = (higher_bits_length - n) >> log_sampling0;
+  uint64_t pointers1 = (n >> log_sampling1);
+  uint64_t pointers0_offset = 0;
+  uint64_t pointers1_offset = (pointers0_offset + pointers0 * pointer_size);
+  uint64_t higher_bits_offset = pointers1_offset + pointers1 * pointer_size;
+  uint64_t lower_bits_offset = higher_bits_offset + higher_bits_length;
+
+  return lower_bits_offset + n * lower_bits;
 }
 
 uint64_t bitsize(uint64_t universe, uint64_t n){
@@ -211,7 +205,6 @@ uint64_t type_encoding(uint64_t universe, uint64_t n){
 
   return type;
 }
-
 
 uint64_t cost_fun(uint64_t universe, uint64_t n) {
   // estimated best cost + fix cost
