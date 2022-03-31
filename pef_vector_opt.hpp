@@ -188,7 +188,7 @@ uint64_t bitsize(uint64_t universe, uint64_t n){
 }
 
 // created by me
-#pragma sdsl::bit_vector global_bv;
+sdsl::bit_vector global_bv;
 uint64_t bf_bitsize_ef(vector< uint64_t > &pb, uint64_t universe, uint64_t start, uint64_t end){
   uint64_t temp;
   global_bv.resize(universe);
