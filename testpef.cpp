@@ -1,17 +1,17 @@
 #include "pef_vector_unif.hpp"
 #include "pef_vector_opt.hpp"
 
-#define N 1500000
-//#define N 14
+//#define N 1500000
+#define N 14
 
 
 int main() {
-  bit_vector b(N);// = {0,0,0,1,1,0,1,0,1,0,1,0,1,0,0,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,0,1,0,1,0,0,1,0,1,0,1,0,1,0,1,0,1,0,0,0,1,0,1,0,1,0,0,1,0,1,0,1,0,1,0,0,0,0,0,0,0,1,0,0,1,0,1,0,0,0,0,0,1,0,0,0,1};
+  //bit_vector b(N);// = {0,0,0,1,1,0,1,0,1,0,1,0,1,0,0,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,0,1,0,1,0,0,1,0,1,0,1,0,1,0,1,0,1,0,0,0,1,0,1,0,1,0,0,1,0,1,0,1,0,1,0,0,0,0,0,0,0,1,0,0,1,0,1,0,0,0,0,0,1,0,0,0,1};
   //bit_vector b = {0,0,0,1,1,0,1,0,1,0,1,0,1,0,0,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,0,1,0,1,0,0,1,0,1,0,1,0,1,0,1,0,1,0,0,0,1,0,1,0,1,0,0,1,0,1,0,1,0,1,0,0,0,0,0,0,0,1,0,0,1,0,1,0,0,0,0,0,1,0,0,0,1,1,1,1};
-  //bit_vector b = {0,0,1,1,0,1,0,1,0,1,0,1,0,0};
+  bit_vector b =  {0,0,1,1,0,1,0,1,0,1,0,1,0,0};
 
   //bit_vector test = {1,0,1,1,0,1,0,1,0,1,0,1,0,0};
-  sdsl::util::set_random_bits(b);
+  //sdsl::util::set_random_bits(b);
   //sdsl::util::set_to_value(b, 1);
   sd_vector<> sd(b);
   //sd_vector<> sd_t(test);
@@ -160,11 +160,11 @@ int main() {
   cout << "------------------------------------------------\n";
 
 
-  cout << "Size EF " << size_in_bytes(sd) << "\n";
-  cout << "Size PEF UNIF BIT VECTOR " << pef_unif.size_in_bytes() << "\n";
-  cout << "Size PEF UNIF POS VECTOR " << pef_unif2.size_in_bytes() << "\n";
-  cout << "Size PEF OPT BIT VECTOR " << pef_opt.size_in_bytes() << "\n";
-  cout << "Size PEF OPT POS VECTOR " << pef_opt2.size_in_bytes() << "\n";
+  cout << "Size EF " << size_in_bytes(sd) << " " << ((double)size_in_bytes(sd) * 8) / pb.size() << "\n";
+  cout << "Size PEF UNIF BIT VECTOR " << pef_unif.size_in_bytes() << " " << ((double)pef_unif.size_in_bytes() * 8) / pb.size() << "\n";
+  cout << "Size PEF UNIF POS VECTOR " << pef_unif2.size_in_bytes() << " " << ((double)pef_unif2.size_in_bytes() * 8) / pb.size() << "\n";
+  cout << "Size PEF OPT BIT VECTOR " << pef_opt.size_in_bytes() << " " << ((double)pef_opt.size_in_bytes() * 8) / pb.size() << "\n";
+  cout << "Size PEF OPT POS VECTOR " << pef_opt2.size_in_bytes() << " " << ((double)pef_opt2.size_in_bytes() * 8) / pb.size() << "\n";
 
   return 0;
 }

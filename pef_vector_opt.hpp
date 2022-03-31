@@ -40,7 +40,7 @@ class cost_window {
     }
 
     void advance_start() {
-      _min_p = *_start_it + 1;
+      _min_p = *(_start_it + 1);
       ++_start;
       ++_start_it;
     }
@@ -169,6 +169,7 @@ uint64_t bitsize(uint64_t universe, uint64_t n){
 
   // the sequence has all 1s? --> 0 bits; otherwise, +infty
   best_cost  = (universe == n) ? 0 : uint64_t(-1);
+  cout << "universe: " << universe << " n: " << n << "\n";
 
   uint64_t ef_cost = bitsize_elias_fano(universe, n) + type_bits;
   if (ef_cost < best_cost) {
@@ -188,6 +189,7 @@ uint64_t type_encoding(uint64_t universe, uint64_t n){
   uint64_t type;
 
   // the sequence has all 1s? --> 0 bits; otherwise, +infty
+  cout << "universe: " << universe << " n: " << n << "\n"; 
   best_cost  = (universe == n) ? 0 : uint64_t(-1);
   type = 0;
 
@@ -282,7 +284,7 @@ class pef_vector_opt {
       return size;
     }
 
-    std::pair<std::vector<uint64_t>, uint64_t> optimal_partition(std::vector<uint64_t> ones_bv, double eps1, double eps2){
+    std::pair<std::vector<uint64_t>, uint64_t> optimal_partition(std::vector<uint64_t> &ones_bv, double eps1, double eps2){
       uint64_t single_block_cost = cost_fun(u, n);   
       std::vector<uint64_t> min_cost(n+1, single_block_cost);
       min_cost[0] = 0;
@@ -311,7 +313,9 @@ class pef_vector_opt {
 
           uint64_t window_cost;
           while (true) {
+            window.print(i);
             window_cost = cost_fun(window.universe(), window.size());
+            cout << window_cost << "\n";
             if (min_cost[i] + window_cost < min_cost[window.end()]) {
               min_cost[window.end()] = min_cost[i] + window_cost;
               path[window.end()] = i;
@@ -334,6 +338,7 @@ class pef_vector_opt {
 
       std::reverse(partition.begin(), partition.end());
       uint64_t cost_opt = min_cost[n];
+      cout << cost_opt << "\n";
       return {partition, cost_opt};
     }
 
