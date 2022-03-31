@@ -40,7 +40,7 @@ class cost_window {
     }
 
     void advance_start() {
-      _min_p = *(_start_it + 1);
+      _min_p = *_start_it + 1;
       ++_start;
       ++_start_it;
     }
@@ -125,6 +125,7 @@ inline uint64_t ceil_log2(const uint64_t x) {
   return (x > 1) ? msb(x - 1) + 1 : 0;
 }
 
+// bitsize calculator for plain bit vector in https://github.com/ot/partitioned_elias_fano
 uint64_t bitsize_plain_bitvector(uint64_t universe, uint64_t n){
   // global parameters
   uint64_t rb_log_rank1_sampling = 9; // cuidado con esto
@@ -144,6 +145,7 @@ uint64_t bitsize_plain_bitvector(uint64_t universe, uint64_t n){
   return bits_offset + universe;
 }
 
+// bitsize calculator for elias fano in https://github.com/ot/partitioned_elias_fano
 uint64_t bitsize_elias_fano(uint64_t universe, uint64_t n){
   //global parameters
   uint64_t ef_log_sampling0 = 9; // cuidado con esto
@@ -164,6 +166,7 @@ uint64_t bitsize_elias_fano(uint64_t universe, uint64_t n){
   return lower_bits_offset + n * lower_bits;
 }
 
+// best bitsize function in https://github.com/ot/partitioned_elias_fano
 uint64_t bitsize(uint64_t universe, uint64_t n){
   uint64_t best_cost;
 
@@ -177,6 +180,65 @@ uint64_t bitsize(uint64_t universe, uint64_t n){
   }
 
   uint64_t rb_cost = bitsize_plain_bitvector(universe, n) + type_bits;
+  if (rb_cost < best_cost) {
+    best_cost = rb_cost;
+  }
+
+  return best_cost;
+}
+
+// created by me
+uint64_t bf_bitsize_ef(vector< uint64_t > &pb, uint64_t universe, uint64_t start, uint64_t end){
+  uint64_t temp;
+  sdsl::bit_vector bv;
+  bv.resize(universe);
+  sdsl::util::set_to_value(bv, 0);
+  //cout << "elems: ";
+  for(uint64_t elem = start; elem < end; elem++) {
+    temp = pb[elem];
+    //cout << temp << " ";
+    bv[temp - start] = 1;
+  }
+  //cout << "\n";
+
+  return size_in_bytes(sd_vector<>(bv));
+}
+
+// created by me
+uint64_t bf_bitsize_bitvector(vector< uint64_t > &pb, uint64_t universe, uint64_t start, uint64_t end){
+  uint64_t temp;
+  sdsl::bit_vector bv;
+  bv.resize(universe);
+  sdsl::util::set_to_value(bv, 0);
+  //cout << "elems: ";
+  for(uint64_t elem = start; elem < end; elem++) {
+    if(elem >= pb.size()){
+      cout << "elem: " << elem << "\n";
+      exit(1); 
+    }
+    temp = pb[elem];
+    //cout << temp << " ";
+    bv[temp - start] = 1;
+  }
+  //cout << "\n";
+
+  return size_in_bytes(bit_vector(bv));
+}
+
+// created by me
+uint64_t bf_bitsize(vector< uint64_t > &pb, uint64_t universe, uint64_t n, uint64_t start, uint64_t end){
+  uint64_t best_cost;
+
+  // the sequence has all 1s? --> 0 bits; otherwise, +infty
+  best_cost  = (universe == n) ? 0 : uint64_t(-1);
+  //cout << "universe: " << universe << " n: " << n << "\n";
+
+  uint64_t ef_cost = bf_bitsize_ef(pb, universe, start, end) + type_bits;
+  if (ef_cost < best_cost) {
+    best_cost = ef_cost;
+  }
+
+  uint64_t rb_cost = bf_bitsize_bitvector(pb, universe, start, end) + type_bits;
   if (rb_cost < best_cost) {
     best_cost = rb_cost;
   }
@@ -208,10 +270,41 @@ uint64_t type_encoding(uint64_t universe, uint64_t n){
   return type;
 }
 
+uint64_t bf_type_encoding(bit_vector &bv, uint64_t universe, uint64_t n){
+  uint64_t best_cost;
+  uint64_t type;
+
+  // the sequence has all 1s? --> 0 bits; otherwise, +infty
+  //cout << "universe: " << universe << " n: " << n << "\n"; 
+  best_cost  = (universe == n) ? 0 : uint64_t(-1);
+  type = 0;
+
+  uint64_t ef_cost = size_in_bytes(sd_vector<>(bv)) + type_bits;
+  if (ef_cost < best_cost) {
+    best_cost = ef_cost;
+    type = 1;
+  }
+
+  uint64_t rb_cost = size_in_bytes(bit_vector(bv)); + type_bits;
+  if (rb_cost < best_cost) {
+    best_cost = rb_cost;
+    type = 2;
+  }
+
+  return type;
+}
+
+// cost fun in github https://github.com/ot/partitioned_elias_fano
 uint64_t cost_fun(uint64_t universe, uint64_t n) {
   // estimated best cost + fix cost
   return bitsize(universe, n) + 64; // config.fix_cost;  // esto último es 64? Ver, me parece que en general no.
 };
+
+// created by me
+uint64_t bf_cost_fun(vector< uint64_t > &pb, uint64_t universe, uint64_t n, uint64_t start, uint64_t end){
+  cout << start << " " << end << " " << universe << " " << n << "\n";
+  return bf_bitsize(pb, n, universe, start, end) + 64;
+}
 
 void print(vector< uint64_t > &v){
   uint64_t i;
@@ -285,13 +378,16 @@ class pef_vector_opt {
     }
 
     std::pair<std::vector<uint64_t>, uint64_t> optimal_partition(std::vector<uint64_t> &ones_bv, double eps1, double eps2){
-      uint64_t single_block_cost = cost_fun(u, n);   
+      //uint64_t single_block_cost = cost_fun(u, n)
+      uint64_t single_block_cost = bf_cost_fun(ones_bv, u, n, 0, n);   
       std::vector<uint64_t> min_cost(n+1, single_block_cost);
       min_cost[0] = 0;
 
       // create the required window: one for each power of approx_factor
       std::vector<cost_window> windows;
-      uint64_t cost_lb = cost_fun(1, 1); // minimum cost
+      //uint64_t cost_lb = cost_fun(1, 1); // minimum cost
+      uint64_t cost_lb = bf_cost_fun(ones_bv, 1, 1, 0, 1);  
+
       uint64_t cost_bound = cost_lb;
 
       while (eps1 == 0 || cost_bound < cost_lb / eps1) {
@@ -314,7 +410,8 @@ class pef_vector_opt {
           uint64_t window_cost;
           while (true) {
             //window.print(i);
-            window_cost = cost_fun(window.universe(), window.size());
+            //window_cost = cost_fun(window.universe(), window.size());
+            window_cost = bf_cost_fun(ones_bv, window.universe(), window.size(), window.start(), window.end());
             //cout << window_cost << "\n";
             if (min_cost[i] + window_cost < min_cost[window.end()]) {
               min_cost[window.end()] = min_cost[i] + window_cost;
@@ -413,7 +510,8 @@ class pef_vector_opt {
         elements_of_L.push_back(temp);
         elements_of_E.push_back(amount_ones + (i == 0 ? 0 : elements_of_E[i - 1]));
 
-        uint64_t type_encoding_block = type_encoding(elem - first_elem + 1, amount_ones);
+        //uint64_t type_encoding_block = type_encoding(elem - first_elem + 1, amount_ones);
+        uint64_t type_encoding_block = bf_type_encoding(block_bv, elem - first_elem + 1, amount_ones);
         add_block(block_bv, type_encoding_block, i);
         start = end + 1;
         first_elem = partition[i];
@@ -433,7 +531,8 @@ class pef_vector_opt {
       }
       elements_of_L.push_back(temp);
       elements_of_E.push_back(amount_ones + (nBlocks == 1 ? 0 : elements_of_E[i - 1]));
-      uint64_t type_encoding_block = type_encoding(elem - first_elem + 1, amount_ones);
+      //uint64_t type_encoding_block = type_encoding(elem - first_elem + 1, amount_ones);
+      uint64_t type_encoding_block = bf_type_encoding(block_bv, elem - first_elem + 1, amount_ones);
       add_block(block_bv, type_encoding_block, i);
 
       L = sd_vector<>(elements_of_L.begin(), elements_of_L.end());
@@ -503,7 +602,6 @@ class pef_vector_opt {
 
       uint64_t amount_ones, elem, temp;
       for(elem = first_elem, amount_ones = 0; elem <= last_elem; elem++, amount_ones++) {
-        //cout << elem << " " << pb.size() << "\n";
         temp = pb[elem - 1];
         block_bv[temp - start] = 1;
       }
