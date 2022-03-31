@@ -22,7 +22,7 @@ int main() {
     rf.read((char*) &pos, sizeof(uint64_t));
     pb.push_back(pos);
     b[pos] = 1;
-    if(pb.size() <= BITS) break;
+    if(pb.size() > BITS) break;
   }
   rf.close();
   

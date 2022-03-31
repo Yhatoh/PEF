@@ -8,6 +8,7 @@
 #include <cinttypes>
 #include <assert.h> 
 
+
 using namespace std;
 using namespace sdsl;
 
@@ -141,8 +142,9 @@ uint64_t bitsize_plain_bitvector(uint64_t universe, uint64_t n){
   uint64_t rank1_samples_offset = 0;
   uint64_t pointers1_offset = rank1_samples_offset + rank1_samples * rank1_sample_size;
   uint64_t bits_offset = pointers1_offset + pointers1 * pointer_size;
-  
-  return bits_offset + universe;
+
+  //return bits_offset + universe;
+  return 64 * (1 + ((universe - 1) / 64) + 1);
 }
 
 // bitsize calculator for elias fano in https://github.com/ot/partitioned_elias_fano
@@ -163,7 +165,9 @@ uint64_t bitsize_elias_fano(uint64_t universe, uint64_t n){
   uint64_t higher_bits_offset = pointers1_offset + pointers1 * pointer_size;
   uint64_t lower_bits_offset = higher_bits_offset + higher_bits_length;
 
-  return lower_bits_offset + n * lower_bits;
+  //return lower_bits_offset + n * lower_bits;
+
+  return n * (2 + ceil_log2((universe / n)));
 }
 
 // best bitsize function in https://github.com/ot/partitioned_elias_fano
@@ -179,7 +183,7 @@ uint64_t bitsize(uint64_t universe, uint64_t n){
     best_cost = ef_cost;
   }
 
-  uint64_t rb_cost = bitsize_plain_bitvector(universe, n) + type_bits + 0.2 * n + 0.0625 * n;
+  uint64_t rb_cost = bitsize_plain_bitvector(universe, n) + type_bits + 0.2 * universe + 0.0625 * universe;
   if (rb_cost < best_cost) {
     best_cost = rb_cost;
   }
@@ -202,7 +206,7 @@ uint64_t type_encoding(uint64_t universe, uint64_t n){
     type = 1;
   }
 
-  uint64_t rb_cost = bitsize_plain_bitvector(universe, n) + type_bits + 0.2 * n + 0.0625 * n;
+  uint64_t rb_cost = bitsize_plain_bitvector(universe, n) + type_bits + 0.2 * universe + 0.0625 * universe;
   if (rb_cost < best_cost) {
     best_cost = rb_cost;
     type = 2;
