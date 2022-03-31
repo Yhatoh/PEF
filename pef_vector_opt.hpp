@@ -188,41 +188,36 @@ uint64_t bitsize(uint64_t universe, uint64_t n){
 }
 
 // created by me
+#pragma sdsl::bit_vector global_bv;
 uint64_t bf_bitsize_ef(vector< uint64_t > &pb, uint64_t universe, uint64_t start, uint64_t end){
   uint64_t temp;
-  sdsl::bit_vector bv;
-  bv.resize(universe);
-  sdsl::util::set_to_value(bv, 0);
+  global_bv.resize(universe);
+  sdsl::util::set_to_value(global_bv, 0);
   //cout << "elems: ";
   for(uint64_t elem = start; elem < end; elem++) {
     temp = pb[elem];
     //cout << temp << " ";
-    bv[temp - start] = 1;
+    global_bv[temp - start] = 1;
   }
   //cout << "\n";
 
-  return size_in_bytes(sd_vector<>(bv));
+  return size_in_bytes(sd_vector<>(global_bv));
 }
 
 // created by me
 uint64_t bf_bitsize_bitvector(vector< uint64_t > &pb, uint64_t universe, uint64_t start, uint64_t end){
   uint64_t temp;
-  sdsl::bit_vector bv;
-  bv.resize(universe);
-  sdsl::util::set_to_value(bv, 0);
+  global_bv.resize(universe);
+  sdsl::util::set_to_value(global_bv, 0);
   //cout << "elems: ";
   for(uint64_t elem = start; elem < end; elem++) {
-    if(elem >= pb.size()){
-      cout << "elem: " << elem << "\n";
-      exit(1); 
-    }
     temp = pb[elem];
     //cout << temp << " ";
-    bv[temp - start] = 1;
+    global_bv[temp - start] = 1;
   }
   //cout << "\n";
 
-  return size_in_bytes(bit_vector(bv));
+  return size_in_bytes(bit_vector(global_bv));
 }
 
 // created by me
@@ -302,8 +297,8 @@ uint64_t cost_fun(uint64_t universe, uint64_t n) {
 
 // created by me
 uint64_t bf_cost_fun(vector< uint64_t > &pb, uint64_t universe, uint64_t n, uint64_t start, uint64_t end){
-  cout << start << " " << end << " " << universe << " " << n << "\n";
-  return bf_bitsize(pb, n, universe, start, end) + 64;
+  //cout << start << " " << end << " " << universe << " " << n << "\n";
+  return bf_bitsize(pb, universe, n, start, end) + 64;
 }
 
 void print(vector< uint64_t > &v){
