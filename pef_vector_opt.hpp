@@ -188,36 +188,33 @@ uint64_t bitsize(uint64_t universe, uint64_t n){
 }
 
 // created by me
-sdsl::bit_vector global_bv;
-uint64_t bf_bitsize_ef(vector< uint64_t > &pb, uint64_t universe, uint64_t start, uint64_t end){
+uint64_t bf_bitsize_ef(sdsl::bit_vector &bv, vector< uint64_t > &pb, uint64_t universe, uint64_t start, uint64_t end){
   uint64_t temp;
-  global_bv.resize(universe);
-  sdsl::util::set_to_value(global_bv, 0);
+  sdsl::util::set_to_value(bv, 0);
   //cout << "elems: ";
   for(uint64_t elem = start; elem < end; elem++) {
     temp = pb[elem];
     //cout << temp << " ";
-    global_bv[temp - start] = 1;
+    bv[temp - start] = 1;
   }
   //cout << "\n";
 
-  return size_in_bytes(sd_vector<>(global_bv));
+  return size_in_bytes(sd_vector<>(bv));
 }
 
 // created by me
-uint64_t bf_bitsize_bitvector(vector< uint64_t > &pb, uint64_t universe, uint64_t start, uint64_t end){
+uint64_t bf_bitsize_bitvector(sdsl::bit_vector &bv, vector< uint64_t > &pb, uint64_t universe, uint64_t start, uint64_t end){
   uint64_t temp;
-  global_bv.resize(universe);
-  sdsl::util::set_to_value(global_bv, 0);
+  sdsl::util::set_to_value(bv, 0);
   //cout << "elems: ";
   for(uint64_t elem = start; elem < end; elem++) {
     temp = pb[elem];
     //cout << temp << " ";
-    global_bv[temp - start] = 1;
+    bv[temp - start] = 1;
   }
   //cout << "\n";
 
-  return size_in_bytes(bit_vector(global_bv));
+  return size_in_bytes(bit_vector(bv));
 }
 
 // created by me
@@ -228,12 +225,14 @@ uint64_t bf_bitsize(vector< uint64_t > &pb, uint64_t universe, uint64_t n, uint6
   best_cost  = (universe == n) ? 0 : uint64_t(-1);
   //cout << "universe: " << universe << " n: " << n << "\n";
 
-  uint64_t ef_cost = bf_bitsize_ef(pb, universe, start, end) + type_bits;
+  sdsl::bit_vector bv;
+  bv.resize(universe);
+  uint64_t ef_cost = bf_bitsize_ef(bv, pb, universe, start, end) + type_bits;
   if (ef_cost < best_cost) {
     best_cost = ef_cost;
   }
 
-  uint64_t rb_cost = bf_bitsize_bitvector(pb, universe, start, end) + type_bits;
+  uint64_t rb_cost = bf_bitsize_bitvector(bv, pb, universe, start, end) + type_bits;
   if (rb_cost < best_cost) {
     best_cost = rb_cost;
   }
@@ -297,7 +296,7 @@ uint64_t cost_fun(uint64_t universe, uint64_t n) {
 
 // created by me
 uint64_t bf_cost_fun(vector< uint64_t > &pb, uint64_t universe, uint64_t n, uint64_t start, uint64_t end){
-  //cout << start << " " << end << " " << universe << " " << n << "\n";
+  cout << start << " " << end << " " << universe << " " << n << "\n";
   return bf_bitsize(pb, universe, n, start, end) + 64;
 }
 
