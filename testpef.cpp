@@ -50,9 +50,9 @@ int main() {
     pass_tests = 1;
     for (uint64_t i = 0; i < N; i++) {
       //cout << "bit " << i << " " << b[i] << "\n";
-      if (pef_unif.access(i) != b[i]){
+      if (pef_unif[i] != b[i]){
         pass_tests = 0;
-        cout << pef_unif.access(i) << " " << b[i] << "\n";
+        cout << pef_unif[i] << " " << b[i] << "\n";
       }
     }
     if(pass_tests) cout << "No difference!\n";
@@ -86,9 +86,9 @@ int main() {
     cout << "# Access\n";
     pass_tests = 1;
     for (uint64_t i = 0; i < N; i++) {
-      if (pef_unif2.access(i) != b[i]){
+      if (pef_unif2[i] != b[i]){
         pass_tests = 0;
-        cout << pef_unif2.access(i) << " " << b[i] << "\n";
+        cout << pef_unif2[i] << " " << b[i] << "\n";
       }
     }
     if(pass_tests) cout << "No difference!\n";
@@ -118,9 +118,9 @@ int main() {
     cout << "# Access\n";
     pass_tests = 1;
     for (uint64_t i = 0; i < N; i++) {
-      if (pef_opt.access(i) != b[i]){
+      if (pef_opt[i] != b[i]){
         pass_tests = 0;
-        cout << pef_opt.access(i) << " " << b[i] << "\n";
+        cout << pef_opt[i] << " " << b[i] << "\n";
       }
     }
     if(pass_tests) cout << "No difference!\n";
@@ -151,9 +151,9 @@ int main() {
     cout << "# Access\n";
     pass_tests = 1;
     for (uint64_t i = 0; i < N; i++) {
-      if (pef_opt2.access(i) != b[i]){
+      if (pef_opt2[i] != b[i]){
         pass_tests = 0;
-        cout << pef_opt2.access(i) << " " << b[i] << "\n";
+        cout << pef_opt2[i] << " " << b[i] << "\n";
       }
     }
     if(pass_tests) cout << "No difference!\n";

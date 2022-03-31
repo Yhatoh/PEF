@@ -594,7 +594,7 @@ class pef_vector_opt {
       return rank_val;
     }
 
-    uint64_t access(uint64_t i){
+    uint64_t operator[](uint64_t i){
       //if i >= u doesn't make sense
 
       uint64_t amount_ones = rank(i + 1);
