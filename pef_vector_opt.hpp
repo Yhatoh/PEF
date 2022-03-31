@@ -179,7 +179,7 @@ uint64_t bitsize(uint64_t universe, uint64_t n){
     best_cost = ef_cost;
   }
 
-  uint64_t rb_cost = bitsize_plain_bitvector(universe, n) + type_bits;
+  uint64_t rb_cost = bitsize_plain_bitvector(universe, n) + type_bits + 0.2 * n + 0.0625 * n;
   if (rb_cost < best_cost) {
     best_cost = rb_cost;
   }
@@ -202,7 +202,7 @@ uint64_t type_encoding(uint64_t universe, uint64_t n){
     type = 1;
   }
 
-  uint64_t rb_cost = bitsize_plain_bitvector(universe, n) + type_bits;
+  uint64_t rb_cost = bitsize_plain_bitvector(universe, n) + type_bits + 0.2 * n + 0.0625 * n;
   if (rb_cost < best_cost) {
     best_cost = rb_cost;
     type = 2;
