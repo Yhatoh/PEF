@@ -4,6 +4,7 @@
 #include "iostream"
 
 #define N 196433254820
+#define BITS 80000000
 
 int main() {
   std::vector<uint64_t> pb;
@@ -16,11 +17,12 @@ int main() {
     std::cout << "Cannot open file!\n";
     return 1;
   }
-  
+
   while(!rf.eof()){
     rf.read((char*) &pos, sizeof(uint64_t));
     pb.push_back(pos);
     b[pos] = 1;
+    if(pb.size() <= BITS) break;
   }
   rf.close();
   
