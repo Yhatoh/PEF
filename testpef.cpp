@@ -159,11 +159,11 @@ int main() {
     if(pass_tests) cout << "No difference!\n";
   cout << "------------------------------------------------\n";
 
-  cout << "Size EF " << size_in_bytes(sd) << " " << ((double)size_in_bytes(sd) * 8) / pb.size() << "\n";
-  cout << "Size PEF UNIF BIT VECTOR " << pef_unif.size_in_bytes() << " " << ((double)pef_unif.size_in_bytes() * 8) / pb.size() << "\n";
-  cout << "Size PEF UNIF POS VECTOR " << pef_unif2.size_in_bytes() << " " << ((double)pef_unif2.size_in_bytes() * 8) / pb.size() << "\n";
-  cout << "Size PEF OPT BIT VECTOR " << pef_opt.size_in_bytes() << " " << ((double)pef_opt.size_in_bytes() * 8) / pb.size() << "\n";
-  cout << "Size PEF OPT POS VECTOR " << pef_opt2.size_in_bytes() << " " << ((double)pef_opt2.size_in_bytes() * 8) / pb.size() << "\n";
+  cout << "Size EF " << size_in_bytes(sd) * 8 << " " << ((double)size_in_bytes(sd) * 8) / pb.size() << "\n";
+  cout << "Size PEF UNIF BIT VECTOR " << pef_unif.size_in_bytes() * 8 << " " << ((double)pef_unif.size_in_bytes() * 8) / pb.size() << "\n";
+  cout << "Size PEF UNIF POS VECTOR " << pef_unif2.size_in_bytes() * 8 << " " << ((double)pef_unif2.size_in_bytes() * 8) / pb.size() << "\n";
+  cout << "Size PEF OPT BIT VECTOR " << pef_opt.size_in_bytes() * 8 << " " << ((double)pef_opt.size_in_bytes() * 8) / pb.size() << "\n";
+  cout << "Size PEF OPT POS VECTOR " << pef_opt2.size_in_bytes() * 8 << " " << ((double)pef_opt2.size_in_bytes() * 8) / pb.size() << "\n";
 
   return 0;
 }

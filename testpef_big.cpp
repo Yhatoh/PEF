@@ -21,10 +21,15 @@ int main() {
   while(!rf.eof()){
     rf.read((char*) &pos, sizeof(uint64_t));
     pb.push_back(pos);
-    b[pos] = 1;
     if(pb.size() > BITS) break;
   }
   rf.close();
+  bit_vector b(pb[pb.size() - 1] + 1);
+  sdsl::util::set_to_value(b, 0);
+  for(uint64_t bit : pb) b[bit] = 1;
+
+
+  
   
   sd_vector<> sd(b);
   cout << "Size PEF SD_VECTOR " << size_in_bytes(sd) << " " << ((double) (size_in_bytes(sd) * 8)) / ((double)pb.size()) << "\n";
