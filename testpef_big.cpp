@@ -32,10 +32,10 @@ int main() {
   
   
   sd_vector<> sd(b);
-  cout << "Size PEF SD_VECTOR " << size_in_bytes(sd) << " " << ((double) (size_in_bytes(sd) * 8)) / ((double)pb.size()) << "\n";
-  pef_vector_unif<1024, rank_support_v5<1>, select_support_mcl<1>> pef_unif(pb, N);
-  cout << "Size PEF UNIF BIT VECTOR POS ONES " << pef_unif.size_in_bytes() << " " << ((double) (pef_unif.size_in_bytes() * 8)) / ((double)pb.size()) << "\n";
-  pef_vector_opt<rank_support_v5<1>, select_support_mcl<1>> pef_opt(pb, N, 0.03, 0.3);
-  cout << "Size PEF OPT BIT VECTOR POS ONES " << pef_opt.size_in_bytes() << " " << ((double) (pef_opt.size_in_bytes() * 8)) / ((double)pb.size()) << "\n";
+  cout << "Size PEF SD_VECTOR " << size_in_bytes(sd) << " " << ((double) (size_in_bytes(sd))) / ((double)pb.size()) << "\n";
+  pef_vector_unif<1024, rank_support_v5<1>, select_support_mcl<1>> pef_unif(pb, pb[pb.size() - 1] + 1);
+  cout << "Size PEF UNIF BIT VECTOR POS ONES " << pef_unif.size_in_bytes() << " " << ((double) (pef_unif.size_in_bytes())) / ((double)pb.size()) << "\n";
+  pef_vector_opt<rank_support_v5<1>, select_support_mcl<1>> pef_opt(pb, pb[pb.size() - 1] + 1, 0.03, 0.3);
+  cout << "Size PEF OPT BIT VECTOR POS ONES " << pef_opt.size_in_bytes() << " " << ((double) (pef_opt.size_in_bytes())) / ((double)pb.size()) << "\n";
   return 0;
 }

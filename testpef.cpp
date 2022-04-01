@@ -11,8 +11,14 @@ int main() {
   //bit_vector b =  {0,0,1,1,0,1,0,1,0,1,0,1,0,0};
 
   //bit_vector test = {1,0,1,1,0,1,0,1,0,1,0,1,0,0};
-  sdsl::util::set_random_bits(b);
+  //sdsl::util::set_random_bits(b);
   //sdsl::util::set_to_value(b, 1);
+
+  for (int i = 0; i < N; ++i){
+    if(i % 5 == 0 || i % 5 == 1){
+      b[i] = 1;
+    }
+  }
   sd_vector<> sd(b);
   //sd_vector<> sd_t(test);
   rank_support_sd<1> rank_sd(&sd);    

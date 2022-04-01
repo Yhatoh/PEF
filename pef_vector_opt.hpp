@@ -122,7 +122,10 @@ inline uint8_t msb(uint64_t x){
   return (uint8_t)ret;
 }
 
-inline uint64_t ceil_log2(const uint64_t x) {
+
+
+inline uint64_t ceil_log2(uint64_t x) {
+
   return (x > 1) ? msb(x - 1) + 1 : 0;
 }
 
@@ -166,7 +169,6 @@ uint64_t bitsize_elias_fano(uint64_t universe, uint64_t n){
   //uint64_t lower_bits_offset = higher_bits_offset + higher_bits_length;
 
   //return lower_bits_offset + n * lower_bits;
-
   return n * (2 + ceil_log2((universe / n))) + 128;
 }
 
@@ -176,7 +178,7 @@ uint64_t bitsize(uint64_t universe, uint64_t n){
 
   // the sequence has all 1s? --> 0 bits; otherwise, +infty
   best_cost  = (universe == n) ? 0 : uint64_t(-1);
-  //cout << "universe: " << universe << " n: " << n << "\n";
+  //cout << "universe: " << universe << " n: " << n << " ";
 
   uint64_t ef_cost = bitsize_elias_fano(universe, n) + type_bits;
   if (ef_cost < best_cost) {
@@ -187,7 +189,7 @@ uint64_t bitsize(uint64_t universe, uint64_t n){
   if (rb_cost < best_cost) {
     best_cost = rb_cost;
   }
-
+  //cout << ef_cost << " " << rb_cost << "\n";
   return best_cost;
 }
 
@@ -196,7 +198,7 @@ uint64_t type_encoding(uint64_t universe, uint64_t n){
   uint64_t type;
 
   // the sequence has all 1s? --> 0 bits; otherwise, +infty
-  //cout << "universe: " << universe << " n: " << n << "\n"; 
+  //cout << "universe: " << universe << " n: " << n << " "; 
   best_cost  = (universe == n) ? 0 : uint64_t(-1);
   type = 0;
 
@@ -218,7 +220,7 @@ uint64_t type_encoding(uint64_t universe, uint64_t n){
 // cost fun in github https://github.com/ot/partitioned_elias_fano
 uint64_t cost_fun(uint64_t universe, uint64_t n) {
   // estimated best cost + fix cost
-  return bitsize(universe, n) + 64; // config.fix_cost;  // esto último es 64? Ver, me parece que en general no.
+  return bitsize(universe, n) + 196; // config.fix_cost;  // esto último es 64? Ver, me parece que en general no.
 };
 
 void print(vector< uint64_t > &v){
@@ -277,14 +279,14 @@ class pef_vector_opt {
       
       for (uint64_t i=0; i < nBlocks; ++i) {
         if (B[i]) {
-          size += sdsl::size_in_bytes(*(sd_vector<> *)P[i]) 
-                + sdsl::size_in_bytes(*(select_support_sd<1> *)block_select[i]);
-                + sdsl::size_in_bytes(*(rank_support_sd<1> *)block_rank[i]);
+          size += sdsl::size_in_bytes(*(sd_vector<> *)P[i]) ;
+                //+ sdsl::size_in_bytes(*(select_support_sd<1> *)block_select[i])
+                //+ sdsl::size_in_bytes(*(rank_support_sd<1> *)block_rank[i]);
         } else {
           if (P[i]) {
-            size += sdsl::size_in_bytes(*(bit_vector *)P[i]) 
-                  + sdsl::size_in_bytes(*(select_support *)block_select[i])
-                  + sdsl::size_in_bytes(*(rank_support *)block_rank[i]);
+            size += sdsl::size_in_bytes(*(bit_vector *)P[i]); 
+                  //+ sdsl::size_in_bytes(*(select_support *)block_select[i])
+                  //+ sdsl::size_in_bytes(*(rank_support *)block_rank[i]);
           }
         }
       }
@@ -316,7 +318,7 @@ class pef_vector_opt {
         for (auto& window: windows) {
 
           assert(window.start() == i);
-          while (window.end() < last_end) {
+          while (window._end < last_end) {
             window.advance_end();
           }
 
@@ -387,7 +389,8 @@ class pef_vector_opt {
 
       for (uint64_t i = 0; i < n; i++)
         ones_bv.push_back(select_1(i+1));
-
+      cout << n << " "; 
+      cout << "size sd: " << bitsize_elias_fano(u, n) <<  " " << bitsize_plain_bitvector(u, n) << "\n";
       //----- Optimal partition -----
       pair<std::vector<uint64_t>, uint64_t> ret = optimal_partition(ones_bv, eps1, eps2);
       std::vector<uint64_t> partition = ret.first;
