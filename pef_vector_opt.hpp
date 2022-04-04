@@ -389,8 +389,8 @@ class pef_vector_opt {
 
       for (uint64_t i = 0; i < n; i++)
         ones_bv.push_back(select_1(i+1));
-      cout << n << " "; 
-      cout << "size sd: " << bitsize_elias_fano(u, n) <<  " " << bitsize_plain_bitvector(u, n) << "\n";
+      //cout << n << " "; 
+      //cout << "size sd: " << bitsize_elias_fano(u, n) <<  " " << bitsize_plain_bitvector(u, n) << "\n";
       //----- Optimal partition -----
       pair<std::vector<uint64_t>, uint64_t> ret = optimal_partition(ones_bv, eps1, eps2);
       std::vector<uint64_t> partition = ret.first;
@@ -502,7 +502,7 @@ class pef_vector_opt {
         elements_of_L.push_back(temp);
         elements_of_E.push_back(amount_ones + (i == 0 ? 0 : elements_of_E[i - 1]));
 
-        uint64_t type_encoding_block = type_encoding(elem - first_elem + 1, amount_ones);
+        uint64_t type_encoding_block = type_encoding(pb[elem - 1] - pb[first_elem - 1] + 1, amount_ones);
         add_block(block_bv, type_encoding_block, i);
         start = end + 1;
         first_elem = partition[i];
@@ -522,7 +522,7 @@ class pef_vector_opt {
       }
       elements_of_L.push_back(temp);
       elements_of_E.push_back(amount_ones + (nBlocks == 1 ? 0 : elements_of_E[i - 1]));
-      uint64_t type_encoding_block = type_encoding(elem - first_elem + 1, amount_ones);
+      uint64_t type_encoding_block = type_encoding(pb[elem - 1] - pb[first_elem - 1] + 1, amount_ones);
       add_block(block_bv, type_encoding_block, i);
 
       L = sd_vector<>(elements_of_L.begin(), elements_of_L.end());
