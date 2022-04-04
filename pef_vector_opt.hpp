@@ -446,7 +446,7 @@ class pef_vector_opt {
       }
       elements_of_L.push_back(temp);
       elements_of_E.push_back(amount_ones + (nBlocks == 1 ? 0 : elements_of_E[i - 1]));
-      uint64_t type_encoding_block = type_encoding(end - first_elem + 1, amount_ones);
+      uint64_t type_encoding_block = type_encoding(end - first_elem, amount_ones);
       add_block(block_bv, type_encoding_block, i);
 
       L = sd_vector<>(elements_of_L.begin(), elements_of_L.end());
@@ -473,7 +473,7 @@ class pef_vector_opt {
       //-----------------------------
 
       nBlocks = partition.size(); // OJO, ver esto, el tamaño de ese vector debería ser el número de bloques
-      cout << nBlocks << " " << cost_opt << "\n";
+      cout << nBlockis << " " << cost_opt << "\n";
 
       P.resize(nBlocks, NULL);
       block_select.resize(nBlocks, NULL);
@@ -522,7 +522,7 @@ class pef_vector_opt {
       }
       elements_of_L.push_back(temp);
       elements_of_E.push_back(amount_ones + (nBlocks == 1 ? 0 : elements_of_E[i - 1]));
-      uint64_t type_encoding_block = type_encoding(pb[end - 1] - pb[first_elem - 1] + 1, amount_ones);
+      uint64_t type_encoding_block = type_encoding(end - pb[first_elem - 1], amount_ones);
       add_block(block_bv, type_encoding_block, i);
 
       L = sd_vector<>(elements_of_L.begin(), elements_of_L.end());
