@@ -408,7 +408,7 @@ class pef_vector_opt {
       uint64_t start = 0;
       uint64_t first_elem = 1;
 
-      uint64_t last_elem, end, size_block, i;
+      uint64_t last_elem, end, size_block, i = 0;
       for(i = 0; i < nBlocks - 1; i++){
         last_elem = partition[i];
         end = select_1(last_elem - 1);
@@ -426,7 +426,7 @@ class pef_vector_opt {
         elements_of_L.push_back(temp);
         elements_of_E.push_back(amount_ones + (i == 0 ? 0 : elements_of_E[i - 1]));
 
-        uint64_t type_encoding_block = type_encoding(elem - first_elem + 1, amount_ones);
+        uint64_t type_encoding_block = type_encoding(end - first_elem + 1, amount_ones);
         add_block(block_bv, type_encoding_block, i);
         start = end + 1;
         first_elem = partition[i];
@@ -446,7 +446,7 @@ class pef_vector_opt {
       }
       elements_of_L.push_back(temp);
       elements_of_E.push_back(amount_ones + (nBlocks == 1 ? 0 : elements_of_E[i - 1]));
-      uint64_t type_encoding_block = type_encoding(elem - first_elem + 1, amount_ones);
+      uint64_t type_encoding_block = type_encoding(end - first_elem + 1, amount_ones);
       add_block(block_bv, type_encoding_block, i);
 
       L = sd_vector<>(elements_of_L.begin(), elements_of_L.end());
@@ -484,7 +484,7 @@ class pef_vector_opt {
       uint64_t start = 0;
       uint64_t first_elem = 1;
 
-      uint64_t last_elem, end, size_block, i;
+      uint64_t last_elem, end, size_block, i = 0;
       for(i = 0; i < nBlocks - 1; i++){
         last_elem = partition[i];
         end = pb[last_elem - 1 - 1];
@@ -502,7 +502,7 @@ class pef_vector_opt {
         elements_of_L.push_back(temp);
         elements_of_E.push_back(amount_ones + (i == 0 ? 0 : elements_of_E[i - 1]));
 
-        uint64_t type_encoding_block = type_encoding(pb[elem - 1] - pb[first_elem - 1], amount_ones);
+        uint64_t type_encoding_block = type_encoding(pb[end - 1] - pb[first_elem - 1] + 1, amount_ones);
         add_block(block_bv, type_encoding_block, i);
         start = end + 1;
         first_elem = partition[i];
@@ -522,7 +522,7 @@ class pef_vector_opt {
       }
       elements_of_L.push_back(temp);
       elements_of_E.push_back(amount_ones + (nBlocks == 1 ? 0 : elements_of_E[i - 1]));
-      uint64_t type_encoding_block = type_encoding(pb[elem - 1] - pb[first_elem - 1], amount_ones);
+      uint64_t type_encoding_block = type_encoding(pb[end - 1] - pb[first_elem - 1] + 1, amount_ones);
       add_block(block_bv, type_encoding_block, i);
 
       L = sd_vector<>(elements_of_L.begin(), elements_of_L.end());

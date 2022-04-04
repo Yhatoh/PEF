@@ -12,7 +12,7 @@ int main() {
 
   //bit_vector test = {1,0,1,1,0,1,0,1,0,1,0,1,0,0};
   //sdsl::util::set_random_bits(b);
-  //sdsl::util::set_to_value(b, 1);
+  sdsl::util::set_to_value(b, 1);
 
   for (int i = 0; i < N; ++i){
     if(i % 5 == 0 || i % 5 == 1){
