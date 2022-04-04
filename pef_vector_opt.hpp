@@ -132,44 +132,44 @@ inline uint64_t ceil_log2(uint64_t x) {
 // bitsize calculator for plain bit vector in https://github.com/ot/partitioned_elias_fano
 uint64_t bitsize_plain_bitvector(uint64_t universe, uint64_t n){
   // global parameters
-  //uint64_t rb_log_rank1_sampling = 9; // cuidado con esto
-  //uint64_t rb_log_sampling1 = 8; // cuidado con esto
+  uint64_t rb_log_rank1_sampling = 9; // cuidado con esto
+  uint64_t rb_log_sampling1 = 8; // cuidado con esto
 
-  //uint64_t log_rank1_sampling = rb_log_rank1_sampling; // cuidado con esto
-  //uint64_t log_sampling1 = rb_log_sampling1; // cuidado con esto
+  uint64_t log_rank1_sampling = rb_log_rank1_sampling; // cuidado con esto
+  uint64_t log_sampling1 = rb_log_sampling1; // cuidado con esto
 
-  //uint64_t rank1_sample_size = ceil_log2(n + 1);
-  //uint64_t pointer_size = ceil_log2(universe);
-  //uint64_t rank1_samples = universe >> log_rank1_sampling;
-  //uint64_t pointers1 = n >> log_sampling1;
-  //uint64_t rank1_samples_offset = 0;
-  //uint64_t pointers1_offset = rank1_samples_offset + rank1_samples * rank1_sample_size;
-  //uint64_t bits_offset = pointers1_offset + pointers1 * pointer_size;
+  uint64_t rank1_sample_size = ceil_log2(n + 1);
+  uint64_t pointer_size = ceil_log2(universe);
+  uint64_t rank1_samples = universe >> log_rank1_sampling;
+  uint64_t pointers1 = n >> log_sampling1;
+  uint64_t rank1_samples_offset = 0;
+  uint64_t pointers1_offset = rank1_samples_offset + rank1_samples * rank1_sample_size;
+  uint64_t bits_offset = pointers1_offset + pointers1 * pointer_size;
 
-  //return bits_offset + universe;
-  return 64 * (1 + ((universe - 1) / 64) + 1) + 0.2 * universe + 0.0625 * universe;
+  return bits_offset + universe;
+  //return 64 * (1 + ((universe - 1) / 64) + 1) + 0.2 * universe + 0.0625 * universe;
 }
 
 // bitsize calculator for elias fano in https://github.com/ot/partitioned_elias_fano
 uint64_t bitsize_elias_fano(uint64_t universe, uint64_t n){
   //global parameters
-  //uint64_t ef_log_sampling0 = 9; // cuidado con esto
-  //uint64_t ef_log_sampling1 = 8; // cuidado con esto
-  //uint64_t log_sampling0 = ef_log_sampling0;
-  //uint64_t log_sampling1 = ef_log_sampling1;
-  //uint64_t lower_bits = universe > n ? msb(universe / n) : 0;
-  //uint64_t mask = (((uint64_t) 1) << lower_bits) - 1;
-  //uint64_t higher_bits_length = n + (universe >> lower_bits) + 2;
-  //uint64_t pointer_size = ceil_log2(higher_bits_length);
-  //uint64_t pointers0 = (higher_bits_length - n) >> log_sampling0;
-  //uint64_t pointers1 = (n >> log_sampling1);
-  //uint64_t pointers0_offset = 0;
-  //uint64_t pointers1_offset = (pointers0_offset + pointers0 * pointer_size);
-  //uint64_t higher_bits_offset = pointers1_offset + pointers1 * pointer_size;
-  //uint64_t lower_bits_offset = higher_bits_offset + higher_bits_length;
+  uint64_t ef_log_sampling0 = 9; // cuidado con esto
+  uint64_t ef_log_sampling1 = 8; // cuidado con esto
+  uint64_t log_sampling0 = ef_log_sampling0;
+  uint64_t log_sampling1 = ef_log_sampling1;
+  uint64_t lower_bits = universe > n ? msb(universe / n) : 0;
+  uint64_t mask = (((uint64_t) 1) << lower_bits) - 1;
+  uint64_t higher_bits_length = n + (universe >> lower_bits) + 2;
+  uint64_t pointer_size = ceil_log2(higher_bits_length);
+  uint64_t pointers0 = (higher_bits_length - n) >> log_sampling0;
+  uint64_t pointers1 = (n >> log_sampling1);
+  uint64_t pointers0_offset = 0;
+  uint64_t pointers1_offset = (pointers0_offset + pointers0 * pointer_size);
+  uint64_t higher_bits_offset = pointers1_offset + pointers1 * pointer_size;
+  uint64_t lower_bits_offset = higher_bits_offset + higher_bits_length;
 
-  //return lower_bits_offset + n * lower_bits;
-  return n * (2 + ceil_log2((universe / n))) + 128;
+  return lower_bits_offset + n * lower_bits;
+  //return n * (2 + ceil_log2((universe / n))) + 128;
 }
 
 // best bitsize function in https://github.com/ot/partitioned_elias_fano
@@ -220,7 +220,7 @@ uint64_t type_encoding(uint64_t universe, uint64_t n){
 // cost fun in github https://github.com/ot/partitioned_elias_fano
 uint64_t cost_fun(uint64_t universe, uint64_t n) {
   // estimated best cost + fix cost
-  return bitsize(universe, n) + 196; // config.fix_cost;  // esto último es 64? Ver, me parece que en general no.
+  return bitsize(universe, n) + 256; // config.fix_cost;  // esto último es 64? Ver, me parece que en general no.
 };
 
 void print(vector< uint64_t > &v){
