@@ -502,7 +502,7 @@ class pef_vector_opt {
         elements_of_L.push_back(temp);
         elements_of_E.push_back(amount_ones + (i == 0 ? 0 : elements_of_E[i - 1]));
 
-        uint64_t type_encoding_block = type_encoding(pb[end - 1] - pb[first_elem - 1] + 1, amount_ones);
+        uint64_t type_encoding_block = type_encoding(end - pb[first_elem - 1] + 1, amount_ones);
         add_block(block_bv, type_encoding_block, i);
         start = end + 1;
         first_elem = partition[i];
