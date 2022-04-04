@@ -65,11 +65,13 @@ class cost_window {
     }
 
     void print(uint64_t i) {
-      cout << "window " << i << ": " 
-           << _start << " " 
-           << _end << " " 
-           << _min_p << " " 
-           << _max_p << " "  
+      cout << "window " << i << ": start " 
+           << _start << " end " 
+           << _end << " min_p " 
+           << _min_p << " max_p " 
+           << _max_p << " u " 
+           << universe() << " n "
+           << size() << " cost " 
            << _cost_upper_bound << "\n";
     }
 };
@@ -117,7 +119,6 @@ inline uint8_t msb(uint64_t x, unsigned long& ret){
 }
  
 inline uint8_t msb(uint64_t x){
-  cout << "?\n";
   unsigned long ret = -1U;
   msb(x, ret);
   return (uint8_t)ret;
