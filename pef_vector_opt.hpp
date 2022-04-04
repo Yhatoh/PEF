@@ -117,6 +117,7 @@ inline uint8_t msb(uint64_t x, unsigned long& ret){
 }
  
 inline uint8_t msb(uint64_t x){
+  cout << "?\n";
   unsigned long ret = -1U;
   msb(x, ret);
   return (uint8_t)ret;
@@ -125,7 +126,6 @@ inline uint8_t msb(uint64_t x){
 
 
 inline uint64_t ceil_log2(uint64_t x) {
-
   return (x > 1) ? msb(x - 1) + 1 : 0;
 }
 
@@ -280,13 +280,13 @@ class pef_vector_opt {
       for (uint64_t i=0; i < nBlocks; ++i) {
         if (B[i]) {
           size += sdsl::size_in_bytes(*(sd_vector<> *)P[i]) ;
-                //+ sdsl::size_in_bytes(*(select_support_sd<1> *)block_select[i])
-                //+ sdsl::size_in_bytes(*(rank_support_sd<1> *)block_rank[i]);
+                + sdsl::size_in_bytes(*(select_support_sd<1> *)block_select[i])
+                + sdsl::size_in_bytes(*(rank_support_sd<1> *)block_rank[i]);
         } else {
           if (P[i]) {
             size += sdsl::size_in_bytes(*(bit_vector *)P[i]); 
-                  //+ sdsl::size_in_bytes(*(select_support *)block_select[i])
-                  //+ sdsl::size_in_bytes(*(rank_support *)block_rank[i]);
+                  + sdsl::size_in_bytes(*(select_support *)block_select[i])
+                  + sdsl::size_in_bytes(*(rank_support *)block_rank[i]);
           }
         }
       }
@@ -328,6 +328,8 @@ class pef_vector_opt {
             window_cost = cost_fun(window.universe(), window.size());
             //cout << window_cost << "\n";
             if (min_cost[i] + window_cost < min_cost[window.end()]) {
+              window.print(i);
+              cout << window_cost << "\n";
               min_cost[window.end()] = min_cost[i] + window_cost;
               path[window.end()] = i;
             }
@@ -446,7 +448,7 @@ class pef_vector_opt {
       }
       elements_of_L.push_back(temp);
       elements_of_E.push_back(amount_ones + (nBlocks == 1 ? 0 : elements_of_E[i - 1]));
-      uint64_t type_encoding_block = type_encoding(end - start, amount_ones);
+      uint64_t type_encoding_block = type_encoding(end - first_elem, amount_ones);
       add_block(block_bv, type_encoding_block, i);
 
       L = sd_vector<>(elements_of_L.begin(), elements_of_L.end());
