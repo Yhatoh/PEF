@@ -8,7 +8,7 @@
 
 int main() {
   std::vector<uint64_t> pb;
-  bit_vector b(N);
+  //bit_vector b(N);
   uint64_t pos;
 
   ifstream rf("/data/bitvectors/ii/gov2/url/gov2_ii_nofreq_url_dif.txt.dat.100000", std::ios::binary);
