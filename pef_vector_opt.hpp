@@ -199,7 +199,8 @@ uint64_t type_encoding(uint64_t universe, uint64_t n){
   uint64_t type;
 
   // the sequence has all 1s? --> 0 bits; otherwise, +infty
-  //cout << "universe: " << universe << " n: " << n << " "; 
+  //if(universe == n + 1) cout << "universe: " << universe << " n: " << n << "\n"; 
+  //if(universe == n + 2) cout << "universe: " << universe << " n: " << n << "\n"; 
   best_cost  = (universe == n) ? 0 : uint64_t(-1);
   type = 0;
 
@@ -219,9 +220,11 @@ uint64_t type_encoding(uint64_t universe, uint64_t n){
 }
 
 // cost fun in github https://github.com/ot/partitioned_elias_fano
+uint64_t fixed_cost = 64;
+
 uint64_t cost_fun(uint64_t universe, uint64_t n) {
   // estimated best cost + fix cost
-  return bitsize(universe, n) + 256; // config.fix_cost;  // esto último es 64? Ver, me parece que en general no.
+  return bitsize(universe, n) + fixed_cost; // config.fix_cost;  // esto último es 64? Ver, me parece que en general no.
 };
 
 void print(vector< uint64_t > &v){
@@ -232,7 +235,7 @@ void print(vector< uint64_t > &v){
   cout << v[i] << "\n";
 }
 
-template<class rank_support=rank_support_scan<1>, class select_support=select_support_scan<1>>
+template<class rank_support=rank_support_scan<1>, class select_support=select_support_scan<1>, uint64_t count_ef=1, uint64_t count_bit=1>
 class pef_vector_opt {
   // last element of each block
   sdsl::sd_vector<> L;
@@ -277,25 +280,50 @@ class pef_vector_opt {
                     + sdsl::size_in_bytes(rank_E)
                     + sdsl::size_in_bytes(B) + 3 * sizeof(uint64_t) 
                     + nBlocks * sizeof(void *);
-      
+      uint64_t ef_times = 0;
+      uint64_t bit_times = 0;
+      uint64_t all_ones_times = 0;
       for (uint64_t i=0; i < nBlocks; ++i) {
         if (B[i]) {
-          size += sdsl::size_in_bytes(*(sd_vector<> *)P[i]) ;
-                + sdsl::size_in_bytes(*(select_support_sd<1> *)block_select[i])
-                + sdsl::size_in_bytes(*(rank_support_sd<1> *)block_rank[i]);
+          if(count_ef == 1){
+            size += sdsl::size_in_bytes(*(sd_vector<> *)P[i])
+                  + sdsl::size_in_bytes(*(select_support_sd<1> *)block_select[i])
+                  + sdsl::size_in_bytes(*(rank_support_sd<1> *)block_rank[i]);
+	  } else {
+            uint64_t n_p = (*(rank_support_sd<1> *)block_rank[i])((*(sd_vector<> *)P[i]).size());
+	    uint64_t u_p = (*(sd_vector<> *)P[i]).size();
+	    if(count_ef == 2){
+	      size += bitsize(u_p, n_p) / 8;
+	    } else size += (n_p * ceil_log2(u_p / n_p) + 2 * n_p) / 8;
+	  }
+	  ef_times++;
         } else {
           if (P[i]) {
-            size += sdsl::size_in_bytes(*(bit_vector *)P[i]); 
+            if(count_bit == 1){
+              size += sdsl::size_in_bytes(*(bit_vector *)P[i])             
+	            + sdsl::size_in_bytes(*(select_support *)block_select[i])
+                    + sdsl::size_in_bytes(*(rank_support *)block_rank[i]);
+	    } else {
+              uint64_t n_p = (*(rank_support *)block_rank[i])((*(bit_vector *)P[i]).size());
+	      uint64_t u_p = (*(bit_vector *)P[i]).size();
+	      if(count_bit == 2) size += (64 * ((u_p - 1)/64 + 1 + 1)) / 8;
+              else size += bitsize(u_p, n_p) / 8;
+            }
+            /*uint64_t sum =sdsl::size_in_bytes(*(bit_vector *)P[i])
                   + sdsl::size_in_bytes(*(select_support *)block_select[i])
                   + sdsl::size_in_bytes(*(rank_support *)block_rank[i]);
-          }
+	    *///if((double) sum / (sdsl::size_in_bytes(*(bit_vector *)P[i])) != 1.0625) cout << "!! " << (double) sum / (sdsl::size_in_bytes(*(bit_vector *)P[i])) << "\n";
+            bit_times++;
+	  } else all_ones_times++;
         }
       }
+      cout << "EF " << ef_times << " BIT " << bit_times << " ALL_ONES " << all_ones_times << " ";
 
       return size;
     }
 
     std::pair<std::vector<uint64_t>, uint64_t> optimal_partition(std::vector<uint64_t> &ones_bv, double eps1, double eps2){
+      //fixed_cost = 2 * ceil_log2(u) + ceil_log2(n);
       uint64_t single_block_cost = cost_fun(u, n);
       std::vector<uint64_t> min_cost(n+1, single_block_cost);
       min_cost[0] = 0;
@@ -329,8 +357,8 @@ class pef_vector_opt {
             window_cost = cost_fun(window.universe(), window.size());
             //cout << window_cost << "\n";
             if (min_cost[i] + window_cost < min_cost[window.end()]) {
-              window.print(i);
-              cout << window_cost << "\n";
+              //window.print(i);
+              //cout << window_cost << "\n";
               min_cost[window.end()] = min_cost[i] + window_cost;
               path[window.end()] = i;
             }
