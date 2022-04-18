@@ -8,10 +8,10 @@
 #include <assert.h> 
 
 using namespace std;
-using namespace sdsl;
+//using namespace sdsl;
 
 
-template<uint64_t b=256, class rank_support=rank_support_scan<1>, class select_support=select_support_scan<1>>
+template<uint64_t b=256, class rank_support_c=sdsl::rank_support_scan<1>, class select_support_c=sdsl::select_support_scan<1>>
 class pef_vector_unif {
   sdsl::sd_vector<> L;
   sdsl::select_support_sd<1> select_L;
@@ -56,26 +56,26 @@ public:
         
     for (uint64_t i=0; i < nBlocks; ++i) {
       if (B[i]) {
-        size += sdsl::size_in_bytes(*(sd_vector<> *)P[i]) 
-              + sdsl::size_in_bytes(*(select_support_sd<1> *)block_select[i]);
-              + sdsl::size_in_bytes(*(rank_support_sd<1> *)block_rank[i]);
+        size += sdsl::size_in_bytes(*(sdsl::sd_vector<> *)P[i]) 
+              + sdsl::size_in_bytes(*(sdsl::select_support_sd<1> *)block_select[i]);
+              + sdsl::size_in_bytes(*(sdsl::rank_support_sd<1> *)block_rank[i]);
       } else {
         if (P[i]) {
-          size += sdsl::size_in_bytes(*(bit_vector *)P[i]) 
-                + sdsl::size_in_bytes(*(select_support *)block_select[i])
-                + sdsl::size_in_bytes(*(rank_support *)block_rank[i]);
+          size += sdsl::size_in_bytes(*(sdsl::bit_vector *)P[i]) 
+                + sdsl::size_in_bytes(*(select_support_c *)block_select[i])
+                + sdsl::size_in_bytes(*(rank_support_c *)block_rank[i]);
         }
       }
     }
     return size;
   }
 
-  pef_vector_unif(bit_vector &bv) {
+  pef_vector_unif(sdsl::bit_vector &bv) {
     
-    select_support select_1(&bv);
-    rank_support_v<1> rank_1(&bv);
+    select_support_c select_1(&bv);
+    rank_support_c rank_1(&bv);
     
-    bit_vector block_bv;
+    sdsl::bit_vector block_bv;
     std::vector<uint64_t> elements_of_L;
 
     u = bv.size();
@@ -87,7 +87,7 @@ public:
     block_select.resize(nBlocks, NULL); 
     block_rank.resize(nBlocks, NULL); 
 
-    B = bit_vector(nBlocks, 0);
+    B = sdsl::bit_vector(nBlocks, 0);
 
     uint64_t next_elem, nElems, start = 0, univ_size_block, i, temp;
 
@@ -113,14 +113,14 @@ public:
         block_rank[i] = NULL;
       } else if (b > univ_size_block/4) {
         B[i] = 0;
-        P[i] = new bit_vector(block_bv);
-        block_select[i] = new select_support((bit_vector *)P[i]); 
-        block_rank[i] = new rank_support((bit_vector *)P[i]); 
+        P[i] = new sdsl::bit_vector(block_bv);
+        block_select[i] = new select_support_c((sdsl::bit_vector *)P[i]); 
+        block_rank[i] = new rank_support_c((sdsl::bit_vector *)P[i]); 
       } else {
         B[i] = 1;
-        P[i] = new sd_vector<>(block_bv);
-        block_select[i] = new select_support_sd<1>((sd_vector<> *)P[i]);
-        block_rank[i] = new rank_support_sd<1>((sd_vector<> *)P[i]);
+        P[i] = new sdsl::sd_vector<>(block_bv);
+        block_select[i] = new sdsl::select_support_sd<1>((sdsl::sd_vector<> *)P[i]);
+        block_rank[i] = new sdsl::rank_support_sd<1>((sdsl::sd_vector<> *)P[i]);
       }
 
       //cout << "next elem " << next_elem << endl;
@@ -149,24 +149,24 @@ public:
       block_rank[i] = NULL;
     } else if (b > univ_size_block / 4) {
       B[i] = 0;
-      P[i] = new bit_vector(block_bv);
-      block_select[i] = new select_support((bit_vector *)P[i]); 
-      block_rank[i] = new rank_support((bit_vector *)P[i]); 
+      P[i] = new sdsl::bit_vector(block_bv);
+      block_select[i] = new select_support_c((sdsl::bit_vector *)P[i]); 
+      block_rank[i] = new rank_support_c((sdsl::bit_vector *)P[i]); 
     } else {
       B[i] = 1;
-      P[i] = new sd_vector<>(block_bv);
-      block_select[i] = new select_support_sd<1>((sd_vector<> *)P[i]);
-      block_rank[i] = new rank_support_sd<1>((sd_vector<> *)P[i]);
+      P[i] = new sdsl::sd_vector<>(block_bv);
+      block_select[i] = new sdsl::select_support_sd<1>((sdsl::sd_vector<> *)P[i]);
+      block_rank[i] = new sdsl::rank_support_sd<1>((sdsl::sd_vector<> *)P[i]);
     }
 
-    L = sd_vector<>(elements_of_L.begin(), elements_of_L.end());
-    util::init_support(select_L, &L);
-    util::init_support(rank_L, &L);
+    L = sdsl::sd_vector<>(elements_of_L.begin(), elements_of_L.end());
+    sdsl::util::init_support(select_L, &L);
+    sdsl::util::init_support(rank_L, &L);
   }
 
   pef_vector_unif(std::vector<uint64_t> &pb, uint64_t universe) {
     
-    bit_vector block_bv;
+    sdsl::bit_vector block_bv;
     std::vector<uint64_t> elements_of_L;
 
     u = universe;
@@ -178,7 +178,7 @@ public:
     block_select.resize(nBlocks, NULL); 
     block_rank.resize(nBlocks, NULL); 
 
-    B = bit_vector(nBlocks, 0);
+    B = sdsl::bit_vector(nBlocks, 0);
 
     uint64_t next_elem, nElems, start = 0, univ_size_block, i, temp;
 
@@ -204,14 +204,14 @@ public:
         block_rank[i] = NULL;
       } else if (b > univ_size_block/4) {
         B[i] = 0;
-        P[i] = new bit_vector(block_bv);
-        block_select[i] = new select_support((bit_vector *)P[i]); 
-        block_rank[i] = new rank_support((bit_vector *)P[i]); 
+        P[i] = new sdsl::bit_vector(block_bv);
+        block_select[i] = new select_support_c((sdsl::bit_vector *)P[i]); 
+        block_rank[i] = new rank_support_c((sdsl::bit_vector *)P[i]); 
       } else {
         B[i] = 1;
-        P[i] = new sd_vector<>(block_bv);
-        block_select[i] = new select_support_sd<1>((sd_vector<> *)P[i]);
-        block_rank[i] = new rank_support_sd<1>((sd_vector<> *)P[i]);
+        P[i] = new sdsl::sd_vector<>(block_bv);
+        block_select[i] = new sdsl::select_support_sd<1>((sdsl::sd_vector<> *)P[i]);
+        block_rank[i] = new sdsl::rank_support_sd<1>((sdsl::sd_vector<> *)P[i]);
       }
 
       //cout << "next elem " << next_elem << endl;
@@ -238,19 +238,19 @@ public:
       block_rank[i] = NULL;
     } else if (b > univ_size_block / 4) {
       B[i] = 0;
-      P[i] = new bit_vector(block_bv);
-      block_select[i] = new select_support((bit_vector *)P[i]); 
-      block_rank[i] = new rank_support((bit_vector *)P[i]); 
+      P[i] = new sdsl::bit_vector(block_bv);
+      block_select[i] = new select_support_c((sdsl::bit_vector *)P[i]); 
+      block_rank[i] = new rank_support_c((sdsl::bit_vector *)P[i]); 
     } else {
       B[i] = 1;
-      P[i] = new sd_vector<>(block_bv);
-      block_select[i] = new select_support_sd<1>((sd_vector<> *)P[i]);
-      block_rank[i] = new rank_support_sd<1>((sd_vector<> *)P[i]);
+      P[i] = new sdsl::sd_vector<>(block_bv);
+      block_select[i] = new sdsl::select_support_sd<1>((sdsl::sd_vector<> *)P[i]);
+      block_rank[i] = new sdsl::rank_support_sd<1>((sdsl::sd_vector<> *)P[i]);
     }
 
-    L = sd_vector<>(elements_of_L.begin(), elements_of_L.end());
-    util::init_support(select_L, &L);
-    util::init_support(rank_L, &L);
+    L = sdsl::sd_vector<>(elements_of_L.begin(), elements_of_L.end());
+    sdsl::util::init_support(select_L, &L);
+    sdsl::util::init_support(rank_L, &L);
   }
 
 
@@ -259,18 +259,18 @@ public:
     uint64_t blk = (i - 1) / b;
     if (B[blk]) {
       if (blk == 0) {
-        return (*(select_support_sd<1> *)block_select[blk])(i);
+        return (*(sdsl::select_support_sd<1> *)block_select[blk])(i);
       } else {
         //cout << "PEF" << endl; fflush(stdout);
-        return select_L(blk) + 1 + (*(select_support_sd<1> *)block_select[blk])((i - 1) % b + 1); 
+        return select_L(blk) + 1 + (*(sdsl::select_support_sd<1> *)block_select[blk])((i - 1) % b + 1); 
       }
     } else {
       if (P[blk]) {
         if (blk == 0) {
-          return (*(select_support *)block_select[blk])(i);
+          return (*(select_support_c *)block_select[blk])(i);
         } else {
           //cout << "Plain" << endl; fflush(stdout);
-          return select_L(blk) + 1 + (*(select_support *)block_select[blk])((i - 1) % b + 1);
+          return select_L(blk) + 1 + (*(select_support_c *)block_select[blk])((i - 1) % b + 1);
         }
       } else {
         // block is a run of 1s
@@ -298,20 +298,20 @@ public:
 
     if (B[blk]) {
       if(blk == 0){
-        rank_val += (*(rank_support_sd<1> *)block_rank[blk])(i);
+        rank_val += (*(sdsl::rank_support_sd<1> *)block_rank[blk])(i);
       } else {
         //obtain position in the block
         uint64_t i_block = i - 1 - select_L(blk);
-        rank_val += (*(rank_support_sd<1> *)block_rank[blk])(i_block);
+        rank_val += (*(sdsl::rank_support_sd<1> *)block_rank[blk])(i_block);
       }
     } else {
       if (P[blk]) {
         if(blk == 0){
-          rank_val += (*(rank_support *)block_rank[blk])(i);
+          rank_val += (*(rank_support_c *)block_rank[blk])(i);
         } else{
           //obtain position in the block
           uint64_t i_block = i - 1 - select_L(blk);
-          rank_val += (*(rank_support *)block_rank[blk])(i_block);
+          rank_val += (*(rank_support_c *)block_rank[blk])(i_block);
         }
       } else {
         // block is a run of 1s

@@ -34,27 +34,29 @@ int main() {
       if(readed >= GROUP_SIZE) break;
     }
         
-    bit_vector b(pb[pb.size() - 1] + 1);
+    sdsl::bit_vector b(pb[pb.size() - 1] + 1);
     sdsl::util::set_to_value(b, 0);
     for(uint64_t bit : pb) b[bit] = 1;
     
-    sd_vector<> sd(b);
-    double size = ((double) (size_in_bytes(sd) * 8)) / ((double)pb.size());
+    sdsl::sd_vector<> sd(b);
+    double size = ((double) (sdsl::size_in_bytes(sd) * 8)) / ((double)pb.size());
     cout << "Size PEF SD_VECTOR " << size << "\n";
     sd_sum += size;
 
-    pef_vector_unif<4096, rank_support_v5<1>, select_support_mcl<1>> pef_unif(pb, pb[pb.size() - 1] + 1);
+    pef_vector_unif<4096, sdsl::rank_support_v5<1>, sdsl::select_support_mcl<1>> pef_unif(pb, pb[pb.size() - 1] + 1);
     size = ((double) (pef_unif.size_in_bytes() * 8)) / ((double)pb.size());
     cout << "Size PEF UNIF BIT VECTOR POS ONES " << size << "\n";
     pef_unif_sum += size;
 
-    pef_vector_opt<rank_support_v5<1>, select_support_mcl<1>, 2, 3> pef_opt(pb, pb[pb.size() - 1] + 1, 0.03, 0.3);
+    pef_vector_opt<sdsl::rank_support_v5<1>, sdsl::select_support_mcl<1>, 2, 3> pef_opt(pb, pb[pb.size() - 1] + 1, 0.03, 0.3);
     size = ((double) (pef_opt.size_in_bytes() * 8)) / ((double)pb.size());
     cout << "Size PEF OPT BIT VECTOR POS ONES " << size << "\n";
     pef_opt_sum += size;
     cout << "\n";
 
     last_one = pb[pb.size() - 1];
+    sdsl::util::clear(sd);
+    sdsl::util::clear(b);
 
     times++;
     //if(times == 2)break;
