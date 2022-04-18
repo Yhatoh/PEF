@@ -100,6 +100,10 @@ uint64_t cost_fun_vigna(uint64_t universe, uint64_t n) {
   return bitsize_vigna(universe, n) + fixed_cost; // config.fix_cost;  // esto último es 64? Ver, me parece que en general no.
 };
 
+// `count_bit` is how you want to sum the space in bytes of the bit_vector
+// if count_bit == 1, will use sdsl::size_in_bytes
+// if count_bit == 2, will use bitsize_plain_vector (ottaviano function)
+// if count_bit == 3, will use the theorical function of a bit_vector
 template<class rank_support_c=sdsl::rank_support_scan<1>, class select_support_c=sdsl::select_support_scan<1>, uint64_t count_bit=1, uint64_t _fixed_cost=64 >
 class pef_vector_opt_vigna {
   // last element of each block
@@ -161,7 +165,7 @@ class pef_vector_opt_vigna {
 	            if(count_bit == 3){
                 size += (64 * ((u_p - 1)/64 + 1 + 1)) / 8;
               } else {
-                size += bitsize(u_p, n_p) / 8;
+                size += bitsize_plain_bitvector(u_p, n_p) / 8;
               }
             }
             bit_times++;

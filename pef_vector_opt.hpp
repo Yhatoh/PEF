@@ -12,6 +12,15 @@
 using namespace std;
 //using namespace sdsl;
 
+// `count_bit` is how you want to sum the space in bytes of the bit_vector
+// if count_bit == 1, will use sdsl::size_in_bytes
+// if count_bit == 2, will use bitsize_plain_vector (ottaviano function)
+// if count_bit == 3, will use the theorical function of a bit_vector
+//
+// `count_ef` is how you want to sum the space in bytes of the sd_vector
+// if count_ef == 1, will use sdsl::size_in_bytes
+// if count_ef == 2, will use bitsize_elias_fano (ottaviano function)
+// if count_ef == 3, will use the theorical function of a sd_vector
 template<class rank_support=sdsl::rank_support_scan<1>, class select_support=sdsl::select_support_scan<1>, uint64_t count_ef=1, uint64_t count_bit=1, uint64_t _fixed_cost=64>
 class pef_vector_opt {
   // last element of each block
@@ -70,7 +79,7 @@ class pef_vector_opt {
             uint64_t n_p = (*(sdsl::rank_support_sd<1> *)block_rank[i])((*(sdsl::sd_vector<> *)P[i]).size());
 	          uint64_t u_p = (*(sdsl::sd_vector<> *)P[i]).size();
 	          if(count_ef == 2){
-	            size += bitsize(u_p, n_p) / 8;
+	            size += bitsize_elias_fano(u_p, n_p) / 8;
 	          } else size += (n_p * ceil_log2(u_p / n_p) + 2 * n_p) / 8;
 	        }
 	        ef_times++;
@@ -84,7 +93,7 @@ class pef_vector_opt {
               uint64_t n_p = (*(rank_support *)block_rank[i])((*(sdsl::bit_vector *)P[i]).size());
 	            uint64_t u_p = (*(sdsl::bit_vector *)P[i]).size();
 	            if(count_bit == 3) size += (64 * ((u_p - 1)/64 + 1 + 1)) / 8;
-              else size += bitsize(u_p, n_p) / 8;
+              else size += bitsize_plain_bitvector(u_p, n_p) / 8;
             }
             /*uint64_t sum =sdsl::size_in_bytes(*(bit_vector *)P[i])
                   + sdsl::size_in_bytes(*(select_support *)block_select[i])
