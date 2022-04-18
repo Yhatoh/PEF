@@ -29,17 +29,17 @@ int main(int argc, char** argv){
       if(readed >= BITS) break;
     }
     rf.close();
-    /*
+   
     sdsl::sd_vector<> sd(pb.begin(), pb.end());
     cout << "SIZE SD_VECTOR " << ((double)sdsl::size_in_bytes(sd) * 8) / ((double) pb.size()) << "\n";
  
-    pef_vector_unif<4096, sdsl::rank_support_v5<1>, sdsl::select_support_mcl<1>> pef_unif(pb, pb[pb.size() - 1] + 1);
+    pef_vector_unif<4096, sdsl::rank_support_v5<1>, sdsl::select_support_mcl<1>> pef_unif(pb, universe);
     cout << "SIZE PEF_UNIF " << ((double)pef_unif.size_in_bytes() * 8) / ((double) pb.size()) << "\n"; 
     
-    pef_vector_opt<sdsl::rank_support_v5<1>, sdsl::select_support_mcl<1>, 1, 1, 4096> pef_opt(pb, pb[pb.size() - 1] + 1, 0.03, 0.3);
+    pef_vector_opt<sdsl::rank_support_v5<1>, sdsl::select_support_mcl<1>, 1, 1, 1024> pef_opt(pb, universe, 0.03, 0.3);
     cout << "SIZE PEF_OPT " << ((double)pef_opt.size_in_bytes() * 8) / ((double) pb.size()) << "\n";  
-    */
-    pef_vector_opt_vigna<sdsl::rank_support_v5<1>, sdsl::select_support_mcl<1>, 1, 1024> pef_opt_vigna(pb, pb[pb.size() - 1] + 1, 0.03, 0.3);
+    
+    pef_vector_opt_vigna<sdsl::rank_support_v5<1>, sdsl::select_support_mcl<1>, 2, 1024> pef_opt_vigna(pb, universe, 0.03, 0.3);
     cout << "SIZE PEF_OPT_VIGNA " << ((double)pef_opt_vigna.size_in_bytes() * 8) / ((double) pb.size()) << "\n";  
 
 
