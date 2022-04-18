@@ -3,7 +3,7 @@
 #include "pef_vector_opt_vigna.hpp"
 
 #define BITS 80000000
-#define N 196433254820
+//#define N 196433254820
 
 int main(int argc, char** argv){
   vector< uint64_t > pb;
@@ -25,8 +25,8 @@ int main(int argc, char** argv){
     while(!rf.eof()){
       rf.read((char*) &pos_one, sizeof(uint64_t));
       pb.push_back(pos_one);
-      readed++;
-      if(readed >= BITS) break;
+      //readed++;
+      //if(readed >= BITS) break;
     }
     rf.close();
    
