@@ -4,6 +4,8 @@
 #include <vector>
 #include <sdsl/vectors.hpp>
 #include <sdsl/bit_vectors.hpp>
+//#include "sdsl-lite/include/sdsl/vectors.hpp"
+//#include "sdsl-lite/include/sdsl/bit_vectors.hpp"
 #include <cinttypes>
 #include <assert.h> 
 

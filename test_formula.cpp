@@ -16,6 +16,7 @@ int main(){
   }
   sux::bits::EliasFano<> ef(pb, N);
   std::cout << ef.select(1) << "\n";
+  std::cout << ef.bitCount() << "\n";  
   std::cout << ef.bitCount() / 8 << "\n";  
 
   uint64_t nums_ones = pb.size();
@@ -44,6 +45,7 @@ int main(){
   std::cout << size_selectz_upper << " ";
 
   std::cout << sizeof(sux::bits::EliasFano<>) + size_lower + size_upper + size_select_upper + size_selectz_upper << "\n";
+  std::cout << 8*(sizeof(sux::bits::EliasFano<>) + size_lower + size_upper + size_select_upper + size_selectz_upper) << "\n";
  
   sdsl::sd_vector<> sd(pb.begin(), pb.end());
   std::cout << sdsl::size_in_bytes(sd) << "\n";
