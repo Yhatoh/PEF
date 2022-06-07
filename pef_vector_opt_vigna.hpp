@@ -166,12 +166,7 @@ class pef_vector_opt_vigna {
       uint64_t size_L = bitsize_final_ef_vigna(u_L, n_L);
       uint64_t size_E = bitsize_final_ef_vigna(u_E, n_E);
       uint64_t size_B = ((u_B / 64 + 1) * 64);
-      /*size = bitsize_elias_fano(u_L, n_L) 
-                    + bitsize_elias_fano(u_E, n_E)
-                    + bitsize_plain_bitvector(u_B, n_B);
-                    + 3 * sizeof(uint64_t) * 8
-                    + nBlocks * sizeof(void *) * 8;
-*/
+
       cout << u << " " << n << " " 
            << size << " " << (double) size / n << " "
            << size_L << " " << (double) size_L / n << " "
@@ -192,18 +187,15 @@ class pef_vector_opt_vigna {
         if (B[i]) {
           uint64_t u_p = (*(sux::bits::EliasFano<> *)P[i]).size();
           uint64_t n_p = (*(sux::bits::EliasFano<> *)P[i]).rank(u_p);
-          //if(i > 84780) cout << "SD " << i << " " << u_p << " " << n_p << " " << bits_built_sd_vector(u_p, n_p, *(sdsl::sd_vector<> *)P[i]) << "\n";
           size += bitsize_final_ef_vigna(u_p, n_p);
           ef_size += bitsize_final_ef_vigna(u_p, n_p);
           //only_blocks += bitsize_final_ef_vigna(u_p, n_p);
           only_blocks += bitsize_ef_vigna(u_p, n_p);
 
-          //if(i > 9784) cout << "SD " << i << " " << u_p << " " << n_p << " " << bits_sd_vector(u_p, n_p) << "\n";
           //size += bitsize_ef_vigna(u_p, n_p);
           //ef_size += bitsize_ef_vigna(u_p, n_p);
           //only_blocks += bitsize_ef_vigna(u_p, n_p);
 
-          //if(i > 84790) cout << "SD " << i << " " << u_p << " " << n_p << " " << bitsize_elias_fano(u_p, n_p) << "\n";
           //size += bitsize_elias_fano(u_p, n_p);
           //ef_size += bitsize_elias_fano(u_p, n_p);
 
@@ -212,18 +204,15 @@ class pef_vector_opt_vigna {
           if (P[i]) {
 	          uint64_t u_p = (*(sdsl::bit_vector *)P[i]).size();
             uint64_t n_p = (*(rank_support_c *)block_rank[i])(u_p);
-            //if(i > 84780) cout << "BIT " << i << " " << u_p << " " << n_p << " " << bits_built_bit_vector(u_p, n_p, *(select_support *)block_select[i]) << "\n";
             size += bits_built_bit_vector(u_p, n_p, *(select_support_c *)block_select[i]);
             bit_size += bits_built_bit_vector(u_p, n_p, *(select_support_c *)block_select[i]);
             //only_blocks += bits_built_bit_vector(u_p, n_p, *(select_support_c *)block_select[i]);
             only_blocks += bits_built_bit_vector_no_select(u_p, n_p);
             
-            //if(i > 9784) cout << "BIT " << i << " " << u_p << " " << n_p << " " << bits_bit_vector(u_p, n_p) << "\n";
             //size += bits_bit_vector(u_p, n_p);
             //bit_size += bits_bit_vector(u_p, n_p);
             //only_blocks += bits_bit_vector(u_p, n_p);
                        
-            //if(i > 84790) cout << "BIT " << i << " " << u_p << " " << n_p << " " << bitsize_plain_bitvector(u_p, n_p) << "\n";
             //size += bitsize_plain_bitvector(u_p, n_p);
             //bit_size += bitsize_plain_bitvector(u_p, n_p);
             bit_times++;
