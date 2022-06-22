@@ -8,7 +8,7 @@ class Randomer {
 
   public:
     
-    Randomer(size_t min, size_t max, unsigned int seed = std::random_device()) 
+    Randomer(size_t min, size_t max, unsigned int seed = std::random_device{}()) 
       : gen_{seed}, dist_(min, max) {}
 
     // if you want predictable numbers 
@@ -17,9 +17,9 @@ class Randomer {
     }
 
     size_t operator()() {
-      return dist_{gen_};
+      return dist_(gen_);
     }
     
-}
+};
 
 #endif

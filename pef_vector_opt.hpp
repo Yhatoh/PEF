@@ -1,6 +1,7 @@
 #ifndef PEF_OPT
 #define PEF_OPT
 
+
 #include <vector>
 #include <utility>
 //#include "sdsl-lite/include/sdsl/vectors.hpp"
@@ -43,6 +44,73 @@ class pef_vector_opt {
     pef_vector_opt() {;}
 
     ~pef_vector_opt() {;}
+
+    void write(ofstream& out) {
+      out.write((char*) &u, sizeof(uint64_t));
+      out.write((char*) &n, sizeof(uint64_t));
+      out.write((char*) &nBlocks, sizeof(uint64_t));
+      
+      L.serialize(out);
+      E.serialize(out);
+
+      B.serialize(out);
+      sdsl::bit_vector P_value(nBlocks, 0);
+      for (uint64_t i=0; i < nBlocks; ++i) {
+        if(P[i]) P_value[i] = 0; // mean is not null
+        else P_value[i] = 1; // mean is null
+      }
+      P_value.serialize(out);
+
+      for (uint64_t i=0; i < nBlocks; ++i) {
+        if (B[i]) {
+          (*(sdsl::sd_vector<> *)P[i]).serialize(out);
+        } else {
+          if (P[i]) {
+            (*(sdsl::bit_vector *)P[i]).serialize(out); 
+	        } else { 
+          }
+        }
+      }
+    }
+    
+    void load(ifstream& in) {
+      in.read((char*) &u, sizeof(uint64_t));
+      in.read((char*) &n, sizeof(uint64_t));
+      in.read((char*) &nBlocks, sizeof(uint64_t));
+
+      L.load(in);
+      sdsl::util::init_support(select_L, &L);
+      sdsl::util::init_support(rank_L, &L);
+
+      E.load(in);
+      sdsl::util::init_support(select_E, &E);
+      sdsl::util::init_support(rank_E, &E);
+
+
+      B.load(in);
+      sdsl::bit_vector P_value;
+      P_value.load(in);
+
+      P.resize(nBlocks, NULL);
+      block_select.resize(nBlocks, NULL);
+      block_rank.resize(nBlocks, NULL);
+      for (uint64_t i=0; i < nBlocks; ++i) {
+        if (B[i]) {
+          P[i] = new sdsl::sd_vector<>;
+          (*(sdsl::sd_vector<> *)P[i]).load(in);
+          block_select[i] = new sdsl::select_support_sd<1>(&(*(sdsl::sd_vector<> *)P[i]));
+          block_rank[i] = new sdsl::rank_support_sd<1>(&(*(sdsl::sd_vector<> *)P[i]));
+        } else {
+          if (P_value[i] == 0) {
+            P[i] = new sdsl::bit_vector;
+            (*(sdsl::bit_vector *)P[i]).load(in); 
+            block_select[i] = new select_support(&(*(sdsl::bit_vector *)P[i])); 
+            block_rank[i] = new rank_support(&(*(sdsl::bit_vector *)P[i])); 
+	        } else { 
+          }
+        }
+      }
+    }
 
     uint64_t size(){
       return u;
@@ -469,6 +537,21 @@ class pef_vector_opt {
       nBlocks = partition.size(); // OJO, ver esto, el tamaño de ese vector debería ser el número de bloques
       cout << nBlocks << " " << cost_opt << " " << (double) cost_opt / n << "\n";
 
+ // this helps to test manually
+/*
+      nBlocks = 3;
+      partition.resize(3, 0);
+
+      partition[0] = 5;
+      partition[1] = 8;
+      partition[2] = 15;
+      partition = {186, 247, 327, 735, 783, 898, 1239, 1537, 1547, 1868, 1996, 2122, 
+                   2442, 2858, 3274, 3720, 4882, 5138, 5416, 5438, 6940, 8196, 8451, 
+                   8780, 8882, 9074, 9448, 10360, 11434, 11570, 13008, 13538, 13562, 
+                   14324, 14486, 14710, 15256, 15314, 15440, 15487, 15510, 16164, 
+                   16199, 19339, 19615, 19743, 19873, 19937, 19965, 20000};
+      nBlocks = 50;
+*/
       P.resize(nBlocks, NULL);
       block_select.resize(nBlocks, NULL);
       block_rank.resize(nBlocks, NULL);
@@ -484,7 +567,7 @@ class pef_vector_opt {
       for(i = 0; i < nBlocks - 1; i++){
         last_elem = partition[i];
         end = pb[last_elem - 1 - 1];
-        //cout << last_elem << " "
+       
         size_block = end - start + 1;
 
         block_bv.resize(size_block);
@@ -499,15 +582,16 @@ class pef_vector_opt {
         elements_of_L.push_back(temp);
         elements_of_E.push_back(amount_ones + (i == 0 ? 0 : elements_of_E[i - 1]));
 
-        uint64_t type_encoding_block = new_type_encoding(end - pb[first_elem - 1] + 1, amount_ones);
-        nani += cost_fun(end - pb[first_elem - 1] + 1, amount_ones);
-        //uint64_t type_encoding_block = new_type_encoding(end - start + 1, amount_ones);
-        //nani += cost_fun(end - start + 1, amount_ones);
+        //uint64_t type_encoding_block = new_type_encoding(end - pb[first_elem - 1] + 1, amount_ones);
+        //nani += cost_fun(end - pb[first_elem - 1] + 1, amount_ones);
+        uint64_t type_encoding_block = new_type_encoding(end - start + 1, amount_ones);
+        nani += cost_fun(end - start + 1, amount_ones);
 
         add_block(block_bv, type_encoding_block, i);
         start = end + 1;
         first_elem = partition[i];
       }
+
       // last block
       last_elem = partition[i];
       end = u;
@@ -524,10 +608,10 @@ class pef_vector_opt {
       elements_of_L.push_back(temp);
       elements_of_E.push_back(amount_ones + (nBlocks == 1 ? 0 : elements_of_E[i - 1]));
       
-      uint64_t type_encoding_block = new_type_encoding(end - pb[first_elem - 1], amount_ones);
-      nani += cost_fun(end - pb[first_elem - 1], amount_ones);
-      //uint64_t type_encoding_block = new_type_encoding(end - start, amount_ones);
-      //nani += cost_fun(end - start, amount_ones);
+      //uint64_t type_encoding_block = new_type_encoding(end - pb[first_elem - 1], amount_ones);
+      //nani += cost_fun(end - pb[first_elem - 1], amount_ones);
+      uint64_t type_encoding_block = new_type_encoding(end - start, amount_ones);
+      nani += cost_fun(end - start, amount_ones);
      
       add_block(block_bv, type_encoding_block, i);
       cout << nBlocks << " " << nani << " " << (double) nani/n << "\n";
