@@ -1,241 +1,21 @@
 #ifndef PEF_OPT
 #define PEF_OPT
 
+
 #include <vector>
 #include <utility>
+//#include "sdsl-lite/include/sdsl/vectors.hpp"
+//#include "sdsl-lite/include/sdsl/bit_vectors.hpp"
 #include <sdsl/vectors.hpp>
 #include <sdsl/bit_vectors.hpp>
 #include <cinttypes>
 #include <assert.h> 
-
+#include "util.hpp"
 
 using namespace std;
-using namespace sdsl;
+//using namespace sdsl;
 
-class cost_window {
-  
-  public:
-    std::vector<uint64_t>::iterator _start_it;
-    std::vector<uint64_t>::iterator _end_it;
-    uint64_t _start = 0;
-    uint64_t _end = 0; // end-th position is not in the current window
-    uint64_t _min_p = 0; // element that preceed the first element of the window
-    uint64_t _max_p = 0;
-
-    uint64_t _cost_upper_bound; // The maximum cost for this window
-
-    cost_window(std::vector<uint64_t>::iterator begin, uint64_t __cost_upper_bound) {
-      _start_it = begin;
-      _end_it = begin;
-      _min_p = *begin;
-      _max_p = 0;
-      _cost_upper_bound = __cost_upper_bound;
-    }
-
-    uint64_t universe() const {
-      return _max_p - _min_p + 1;
-    }
-
-    uint64_t size() const {
-      return _end - _start;
-    }
-
-    void advance_start() {
-      _min_p = *_start_it + 1;
-      ++_start;
-      ++_start_it;
-    }
-
-    void advance_end() {
-      _max_p = *_end_it;
-      ++_end;
-      ++_end_it;
-    }
-
-    uint64_t start() {
-      return _start;
-    }
-
-    uint64_t end() {
-      return _end;
-    }
-
-    uint64_t cost_upper_bound() {
-      return _cost_upper_bound;
-    }
-
-    void print(uint64_t i) {
-      cout << "window " << i << ": start " 
-           << _start << " end " 
-           << _end << " min_p " 
-           << _min_p << " max_p " 
-           << _max_p << " u " 
-           << universe() << " n "
-           << size() << " cost " 
-           << _cost_upper_bound << "\n";
-    }
-};
-
-static const uint64_t type_bits = 1; // all_ones is implicit
-
-// from succint repository
-static const uint8_t debruijn64_mapping[64] = {
-  63,  0, 58,  1, 59, 47, 53,  2,
-  60, 39, 48, 27, 54, 33, 42,  3,
-  61, 51, 37, 40, 49, 18, 28, 20,
-  55, 30, 34, 11, 43, 14, 22,  4,
-  62, 57, 46, 52, 38, 26, 32, 41,
-  50, 36, 17, 19, 29, 10, 13, 21,
-  56, 45, 25, 31, 35, 16,  9, 12,
-  44, 24, 15,  8, 23,  7,  6,  5
-};
-
-static const uint64_t debruijn64 = 0x07EDD5E59A4E28C2ULL;
-
-// return the position of the single bit set in the word x
-inline uint8_t bit_position(uint64_t x){
-    assert(popcount(x) == 1);
-    return debruijn64_mapping[(x * debruijn64) >> 58];
-}
-
-inline uint8_t msb(uint64_t x, unsigned long& ret){
-  if (!x) {
-    return false;
-  }
-
-  // right-saturate the word
-  x |= x >> 1;
-  x |= x >> 2;
-  x |= x >> 4;
-  x |= x >> 8;
-  x |= x >> 16;
-  x |= x >> 32;
-
-  // isolate the MSB
-  x ^= x >> 1;
-  ret = bit_position(x);
-
-  return true;
-}
- 
-inline uint8_t msb(uint64_t x){
-  unsigned long ret = -1U;
-  msb(x, ret);
-  return (uint8_t)ret;
-}
-
-
-
-inline uint64_t ceil_log2(uint64_t x) {
-  return (x > 1) ? msb(x - 1) + 1 : 0;
-}
-
-// bitsize calculator for plain bit vector in https://github.com/ot/partitioned_elias_fano
-uint64_t bitsize_plain_bitvector(uint64_t universe, uint64_t n){
-  // global parameters
-  uint64_t rb_log_rank1_sampling = 9; // cuidado con esto
-  uint64_t rb_log_sampling1 = 8; // cuidado con esto
-
-  uint64_t log_rank1_sampling = rb_log_rank1_sampling; // cuidado con esto
-  uint64_t log_sampling1 = rb_log_sampling1; // cuidado con esto
-
-  uint64_t rank1_sample_size = ceil_log2(n + 1);
-  uint64_t pointer_size = ceil_log2(universe);
-  uint64_t rank1_samples = universe >> log_rank1_sampling;
-  uint64_t pointers1 = n >> log_sampling1;
-  uint64_t rank1_samples_offset = 0;
-  uint64_t pointers1_offset = rank1_samples_offset + rank1_samples * rank1_sample_size;
-  uint64_t bits_offset = pointers1_offset + pointers1 * pointer_size;
-
-  return bits_offset + universe;
-  //return 64 * (1 + ((universe - 1) / 64) + 1) + 0.2 * universe + 0.0625 * universe;
-}
-
-// bitsize calculator for elias fano in https://github.com/ot/partitioned_elias_fano
-uint64_t bitsize_elias_fano(uint64_t universe, uint64_t n){
-  //global parameters
-  uint64_t ef_log_sampling0 = 9; // cuidado con esto
-  uint64_t ef_log_sampling1 = 8; // cuidado con esto
-  uint64_t log_sampling0 = ef_log_sampling0;
-  uint64_t log_sampling1 = ef_log_sampling1;
-  uint64_t lower_bits = universe > n ? msb(universe / n) : 0;
-  uint64_t mask = (((uint64_t) 1) << lower_bits) - 1;
-  uint64_t higher_bits_length = n + (universe >> lower_bits) + 2;
-  uint64_t pointer_size = ceil_log2(higher_bits_length);
-  uint64_t pointers0 = (higher_bits_length - n) >> log_sampling0;
-  uint64_t pointers1 = (n >> log_sampling1);
-  uint64_t pointers0_offset = 0;
-  uint64_t pointers1_offset = (pointers0_offset + pointers0 * pointer_size);
-  uint64_t higher_bits_offset = pointers1_offset + pointers1 * pointer_size;
-  uint64_t lower_bits_offset = higher_bits_offset + higher_bits_length;
-
-  return lower_bits_offset + n * lower_bits;
-  //return n * (2 + ceil_log2((universe / n))) + 128;
-}
-
-// best bitsize function in https://github.com/ot/partitioned_elias_fano
-uint64_t bitsize(uint64_t universe, uint64_t n){
-  uint64_t best_cost;
-
-  // the sequence has all 1s? --> 0 bits; otherwise, +infty
-  best_cost  = (universe == n) ? 0 : uint64_t(-1);
-  //cout << "universe: " << universe << " n: " << n << " ";
-
-  uint64_t ef_cost = bitsize_elias_fano(universe, n) + type_bits;
-  if (ef_cost < best_cost) {
-    best_cost = ef_cost;
-  }
-
-  uint64_t rb_cost = bitsize_plain_bitvector(universe, n) + type_bits;
-  if (rb_cost < best_cost) {
-    best_cost = rb_cost;
-  }
-  //cout << ef_cost << " " << rb_cost << "\n";
-  return best_cost;
-}
-
-uint64_t type_encoding(uint64_t universe, uint64_t n){
-  uint64_t best_cost;
-  uint64_t type;
-
-  // the sequence has all 1s? --> 0 bits; otherwise, +infty
-  //if(universe == n + 1) cout << "universe: " << universe << " n: " << n << "\n"; 
-  //if(universe == n + 2) cout << "universe: " << universe << " n: " << n << "\n"; 
-  best_cost  = (universe == n) ? 0 : uint64_t(-1);
-  type = 0;
-
-  uint64_t ef_cost = bitsize_elias_fano(universe, n) + type_bits;
-  if (ef_cost < best_cost) {
-    best_cost = ef_cost;
-    type = 1;
-  }
-
-  uint64_t rb_cost = bitsize_plain_bitvector(universe, n) + type_bits;
-  if (rb_cost < best_cost) {
-    best_cost = rb_cost;
-    type = 2;
-  }
-
-  return type;
-}
-
-// cost fun in github https://github.com/ot/partitioned_elias_fano
-uint64_t fixed_cost = 64;
-
-uint64_t cost_fun(uint64_t universe, uint64_t n) {
-  // estimated best cost + fix cost
-  return bitsize(universe, n) + fixed_cost; // config.fix_cost;  // esto último es 64? Ver, me parece que en general no.
-};
-
-void print(vector< uint64_t > &v){
-  uint64_t i;
-  for(i = 0; i < ((uint64_t) v.size()) - 1; i++){
-    cout << v[i] << " ";
-  }
-  cout << v[i] << "\n";
-}
-
-template<class rank_support=rank_support_scan<1>, class select_support=select_support_scan<1>, uint64_t count_ef=1, uint64_t count_bit=1>
+template<class rank_support=sdsl::rank_support_scan<1>, class select_support=sdsl::select_support_scan<1>, uint64_t _fixed_cost=64>
 class pef_vector_opt {
   // last element of each block
   sdsl::sd_vector<> L;
@@ -265,6 +45,73 @@ class pef_vector_opt {
 
     ~pef_vector_opt() {;}
 
+    void write(ofstream& out) {
+      out.write((char*) &u, sizeof(uint64_t));
+      out.write((char*) &n, sizeof(uint64_t));
+      out.write((char*) &nBlocks, sizeof(uint64_t));
+      
+      L.serialize(out);
+      E.serialize(out);
+
+      B.serialize(out);
+      sdsl::bit_vector P_value(nBlocks, 0);
+      for (uint64_t i=0; i < nBlocks; ++i) {
+        if(P[i]) P_value[i] = 0; // mean is not null
+        else P_value[i] = 1; // mean is null
+      }
+      P_value.serialize(out);
+
+      for (uint64_t i=0; i < nBlocks; ++i) {
+        if (B[i]) {
+          (*(sdsl::sd_vector<> *)P[i]).serialize(out);
+        } else {
+          if (P[i]) {
+            (*(sdsl::bit_vector *)P[i]).serialize(out); 
+	        } else { 
+          }
+        }
+      }
+    }
+    
+    void load(ifstream& in) {
+      in.read((char*) &u, sizeof(uint64_t));
+      in.read((char*) &n, sizeof(uint64_t));
+      in.read((char*) &nBlocks, sizeof(uint64_t));
+
+      L.load(in);
+      sdsl::util::init_support(select_L, &L);
+      sdsl::util::init_support(rank_L, &L);
+
+      E.load(in);
+      sdsl::util::init_support(select_E, &E);
+      sdsl::util::init_support(rank_E, &E);
+
+
+      B.load(in);
+      sdsl::bit_vector P_value;
+      P_value.load(in);
+
+      P.resize(nBlocks, NULL);
+      block_select.resize(nBlocks, NULL);
+      block_rank.resize(nBlocks, NULL);
+      for (uint64_t i=0; i < nBlocks; ++i) {
+        if (B[i]) {
+          P[i] = new sdsl::sd_vector<>;
+          (*(sdsl::sd_vector<> *)P[i]).load(in);
+          block_select[i] = new sdsl::select_support_sd<1>(&(*(sdsl::sd_vector<> *)P[i]));
+          block_rank[i] = new sdsl::rank_support_sd<1>(&(*(sdsl::sd_vector<> *)P[i]));
+        } else {
+          if (P_value[i] == 0) {
+            P[i] = new sdsl::bit_vector;
+            (*(sdsl::bit_vector *)P[i]).load(in); 
+            block_select[i] = new select_support(&(*(sdsl::bit_vector *)P[i])); 
+            block_rank[i] = new rank_support(&(*(sdsl::bit_vector *)P[i])); 
+	        } else { 
+          }
+        }
+      }
+    }
+
     uint64_t size(){
       return u;
     }
@@ -274,6 +121,11 @@ class pef_vector_opt {
     }
 
     uint64_t size_in_bytes(){
+      uint64_t only_encoding = sdsl::size_in_bytes(L)
+                             + sdsl::size_in_bytes(E)
+                             + sdsl::size_in_bytes(B) + 3 * sizeof(uint64_t) 
+                             + nBlocks * sizeof(void *);
+ 
       uint64_t size = sdsl::size_in_bytes(L) + sdsl::size_in_bytes(select_L)
                     + sdsl::size_in_bytes(rank_L)
                     + sdsl::size_in_bytes(E) + sdsl::size_in_bytes(select_E)
@@ -285,43 +137,216 @@ class pef_vector_opt {
       uint64_t all_ones_times = 0;
       for (uint64_t i=0; i < nBlocks; ++i) {
         if (B[i]) {
-          if(count_ef == 1){
-            size += sdsl::size_in_bytes(*(sd_vector<> *)P[i])
-                  + sdsl::size_in_bytes(*(select_support_sd<1> *)block_select[i])
-                  + sdsl::size_in_bytes(*(rank_support_sd<1> *)block_rank[i]);
-	  } else {
-            uint64_t n_p = (*(rank_support_sd<1> *)block_rank[i])((*(sd_vector<> *)P[i]).size());
-	    uint64_t u_p = (*(sd_vector<> *)P[i]).size();
-	    if(count_ef == 2){
-	      size += bitsize(u_p, n_p) / 8;
-	    } else size += (n_p * ceil_log2(u_p / n_p) + 2 * n_p) / 8;
-	  }
-	  ef_times++;
+          only_encoding += sdsl::size_in_bytes(*(sdsl::sd_vector<> *)P[i]); 
+          size += sdsl::size_in_bytes(*(sdsl::sd_vector<> *)P[i])
+                + sdsl::size_in_bytes(*(sdsl::select_support_sd<1> *)block_select[i])
+                + sdsl::size_in_bytes(*(sdsl::rank_support_sd<1> *)block_rank[i]);
+	        ef_times++;
         } else {
           if (P[i]) {
-            if(count_bit == 1){
-              size += sdsl::size_in_bytes(*(bit_vector *)P[i])             
-	            + sdsl::size_in_bytes(*(select_support *)block_select[i])
-                    + sdsl::size_in_bytes(*(rank_support *)block_rank[i]);
-	    } else {
-              uint64_t n_p = (*(rank_support *)block_rank[i])((*(bit_vector *)P[i]).size());
-	      uint64_t u_p = (*(bit_vector *)P[i]).size();
-	      if(count_bit == 2) size += (64 * ((u_p - 1)/64 + 1 + 1)) / 8;
-              else size += bitsize(u_p, n_p) / 8;
-            }
-            /*uint64_t sum =sdsl::size_in_bytes(*(bit_vector *)P[i])
-                  + sdsl::size_in_bytes(*(select_support *)block_select[i])
-                  + sdsl::size_in_bytes(*(rank_support *)block_rank[i]);
-	    *///if((double) sum / (sdsl::size_in_bytes(*(bit_vector *)P[i])) != 1.0625) cout << "!! " << (double) sum / (sdsl::size_in_bytes(*(bit_vector *)P[i])) << "\n";
+            only_encoding += sdsl::size_in_bytes(*(sdsl::bit_vector *)P[i]); 
+            size += sdsl::size_in_bytes(*(sdsl::bit_vector *)P[i])             
+                  + sdsl::size_in_bytes(*(rank_support *)block_rank[i])
+                  + sdsl::size_in_bytes(*(select_support *)block_select[i]);
             bit_times++;
-	  } else all_ones_times++;
+	        } else { 
+            all_ones_times++;
+          }
         }
       }
-      cout << "EF " << ef_times << " BIT " << bit_times << " ALL_ONES " << all_ones_times << " ";
-
+      cout << "EF " << ef_times << " BIT " << bit_times << " ALL_ONES " << all_ones_times << " " << (double) only_encoding / (double) n << " ";
       return size;
     }
+    
+    uint64_t size_in_bits_formula(){
+      rank_support rank_B(&B);
 
+      uint64_t u_L = L.size();
+      uint64_t n_L = rank_L(u_L);
+      
+      uint64_t u_E = E.size();
+      uint64_t n_E = rank_E(u_E);
+
+      uint64_t n_B = rank_B(nBlocks);
+      uint64_t u_B = nBlocks;
+
+      uint64_t size = bits_built_sd_vector(u_L, n_L, L) 
+                    + bits_built_sd_vector(u_E, n_E, E)
+                    + ((u_B / 64 + 1) * 64);
+                    + 3 * sizeof(uint64_t) * 8
+                    + nBlocks * sizeof(void *) * 8;
+      uint64_t size_L = bits_built_sd_vector(u_L, n_L, L);
+      uint64_t size_E = bits_built_sd_vector(u_E, n_E, E);
+      uint64_t size_B = ((u_B / 64 + 1) * 64);
+                   /*
+      size = bitsize_elias_fano(u_L, n_L) 
+                    + bitsize_elias_fano(u_E, n_E)
+                    + bitsize_plain_bitvector(u_B, n_B);
+                    + 3 * sizeof(uint64_t) * 8
+                    + nBlocks * sizeof(void *) * 8;
+*/
+      cout << u << " " << n << " " 
+           << size << " " << (double) size / n << " "
+           << size_L << " " << (double) size_L / n << " "
+           << size_E << " " << (double) size_E / n << " "
+           << size_B << " " << (double) size_B / n << " ";
+      
+      uint64_t ef_times = 0;
+      uint64_t ef_size = 0;
+      
+      uint64_t bit_times = 0;
+      uint64_t bit_size = 0;
+      
+      uint64_t only_blocks = 0;
+
+      uint64_t all_ones_times = 0;
+      
+      for (uint64_t i=0; i < nBlocks; ++i) {
+        if (B[i]) {
+          uint64_t u_p = (*(sdsl::sd_vector<> *)P[i]).size();
+          uint64_t n_p = (*(sdsl::rank_support_sd<1> *)block_rank[i])(u_p);
+          //if(i > 84780) cout << "SD " << i << " " << u_p << " " << n_p << " " << bits_built_sd_vector(u_p, n_p, *(sdsl::sd_vector<> *)P[i]) << "\n";
+          size += bits_built_sd_vector(u_p, n_p, *(sdsl::sd_vector<> *)P[i]);
+          ef_size += bits_built_sd_vector(u_p, n_p, *(sdsl::sd_vector<> *)P[i]);
+          //only_blocks += bits_built_sd_vector(u_p, n_p, *(sdsl::sd_vector<> *)P[i]);
+          only_blocks += bits_built_sd_vector_no_select(u_p, n_p);
+
+          //if(i > 9784) cout << "SD " << i << " " << u_p << " " << n_p << " " << bits_sd_vector(u_p, n_p) << "\n";
+          //size += bits_sd_vector(u_p, n_p);
+          //ef_size += bits_sd_vector(u_p, n_p);
+          //only_blocks += bits_sd_vector(u_p, n_p);
+
+          //if(i > 84790) cout << "SD " << i << " " << u_p << " " << n_p << " " << bitsize_elias_fano(u_p, n_p) << "\n";
+          //size += bitsize_elias_fano(u_p, n_p);
+          //ef_size += bitsize_elias_fano(u_p, n_p);
+
+	        ef_times++;
+        } else {
+          if (P[i]) {
+	          uint64_t u_p = (*(sdsl::bit_vector *)P[i]).size();
+            uint64_t n_p = (*(rank_support *)block_rank[i])(u_p);
+            //if(i > 84780) cout << "BIT " << i << " " << u_p << " " << n_p << " " << bits_built_bit_vector(u_p, n_p, *(select_support *)block_select[i]) << "\n";
+            size += bits_built_bit_vector(u_p, n_p, *(select_support *)block_select[i]);
+            bit_size += bits_built_bit_vector(u_p, n_p, *(select_support *)block_select[i]);
+            //only_blocks += bits_built_bit_vector(u_p, n_p, *(select_support *)block_select[i]);
+            only_blocks += bits_built_bit_vector_no_select(u_p, n_p);
+ 
+            //if(i > 9784) cout << "BIT " << i << " " << u_p << " " << n_p << " " << bits_bit_vector(u_p, n_p) << "\n";
+            //size += bits_bit_vector(u_p, n_p);
+            //bit_size += bits_bit_vector(u_p, n_p);
+            //only_blocks += bits_bit_vector(u_p, n_p);
+                       
+            //if(i > 84790) cout << "BIT " << i << " " << u_p << " " << n_p << " " << bitsize_plain_bitvector(u_p, n_p) << "\n";
+            //size += bitsize_plain_bitvector(u_p, n_p);
+            //bit_size += bitsize_plain_bitvector(u_p, n_p);
+            bit_times++;
+	        } else { 
+            all_ones_times++;
+          }
+        }
+      }
+      cout << "EF " << ef_times << " BIT " << bit_times << " ALL_ONES " << all_ones_times 
+           << " " << ef_size << " " << bit_size << " "
+           << (double) ef_size / n << " " << (double) bit_size / n << " "
+           << only_blocks << " "
+           << (double) only_blocks / n << "\n";
+      return size;
+    }
+    
+    uint64_t size_in_bits_formula_no_select(){
+      rank_support rank_B(&B);
+
+      uint64_t u_L = L.size();
+      uint64_t n_L = rank_L(u_L);
+      
+      uint64_t u_E = E.size();
+      uint64_t n_E = rank_E(u_E);
+
+      uint64_t n_B = rank_B(nBlocks);
+      uint64_t u_B = nBlocks;
+
+      uint64_t size = bits_built_sd_vector(u_L, n_L, L) 
+                    + bits_built_sd_vector(u_E, n_E, E)
+                    + ((u_B / 64 + 1) * 64);
+                    + 3 * sizeof(uint64_t) * 8
+                    + nBlocks * sizeof(void *) * 8;
+      uint64_t size_L = bits_built_sd_vector(u_L, n_L, L);
+      uint64_t size_E = bits_built_sd_vector(u_E, n_E, E);
+      uint64_t size_B = ((u_B / 64 + 1) * 64);
+                   /*
+      size = bitsize_elias_fano(u_L, n_L) 
+                    + bitsize_elias_fano(u_E, n_E)
+                    + bitsize_plain_bitvector(u_B, n_B);
+                    + 3 * sizeof(uint64_t) * 8
+                    + nBlocks * sizeof(void *) * 8;
+*/
+      cout << u << " " << n << " " 
+           << size << " " << (double) size / n << " "
+           << size_L << " " << (double) size_L / n << " "
+           << size_E << " " << (double) size_E / n << " "
+           << size_B << " " << (double) size_B / n << " ";
+      
+      uint64_t ef_times = 0;
+      uint64_t ef_size = 0;
+      
+      uint64_t bit_times = 0;
+      uint64_t bit_size = 0;
+      
+      uint64_t only_blocks = 0;
+
+      uint64_t all_ones_times = 0;
+      
+      for (uint64_t i=0; i < nBlocks; ++i) {
+        if (B[i]) {
+          uint64_t u_p = (*(sdsl::sd_vector<> *)P[i]).size();
+          uint64_t n_p = (*(sdsl::rank_support_sd<1> *)block_rank[i])(u_p);
+          //if(i > 84780) cout << "SD " << i << " " << u_p << " " << n_p << " " << bits_built_sd_vector(u_p, n_p, *(sdsl::sd_vector<> *)P[i]) << "\n";
+          size += bits_built_sd_vector(u_p, n_p, *(sdsl::sd_vector<> *)P[i]);
+          ef_size += bits_built_sd_vector(u_p, n_p, *(sdsl::sd_vector<> *)P[i]);
+          //only_blocks += bits_built_sd_vector(u_p, n_p, *(sdsl::sd_vector<> *)P[i]);
+          only_blocks += bits_built_sd_vector_no_select(u_p, n_p);
+
+          //if(i > 9784) cout << "SD " << i << " " << u_p << " " << n_p << " " << bits_sd_vector(u_p, n_p) << "\n";
+          //size += bits_sd_vector(u_p, n_p);
+          //ef_size += bits_sd_vector(u_p, n_p);
+          //only_blocks += bits_sd_vector(u_p, n_p);
+
+          //if(i > 84790) cout << "SD " << i << " " << u_p << " " << n_p << " " << bitsize_elias_fano(u_p, n_p) << "\n";
+          //size += bitsize_elias_fano(u_p, n_p);
+          //ef_size += bitsize_elias_fano(u_p, n_p);
+
+	        ef_times++;
+        } else {
+          if (P[i]) {
+	          uint64_t u_p = (*(sdsl::bit_vector *)P[i]).size();
+            uint64_t n_p = (*(rank_support *)block_rank[i])(u_p);
+            //if(i > 84780) cout << "BIT " << i << " " << u_p << " " << n_p << " " << bits_built_bit_vector(u_p, n_p, *(select_support *)block_select[i]) << "\n";
+            size += bits_built_bit_vector(u_p, n_p, *(select_support *)block_select[i]);
+            bit_size += bits_built_bit_vector(u_p, n_p, *(select_support *)block_select[i]);
+            //only_blocks += bits_built_bit_vector(u_p, n_p, *(select_support *)block_select[i]);
+            only_blocks += bits_built_bit_vector_no_select(u_p, n_p);
+ 
+            //if(i > 9784) cout << "BIT " << i << " " << u_p << " " << n_p << " " << bits_bit_vector(u_p, n_p) << "\n";
+            //size += bits_bit_vector(u_p, n_p);
+            //bit_size += bits_bit_vector(u_p, n_p);
+            //only_blocks += bits_bit_vector(u_p, n_p);
+                       
+            //if(i > 84790) cout << "BIT " << i << " " << u_p << " " << n_p << " " << bitsize_plain_bitvector(u_p, n_p) << "\n";
+            //size += bitsize_plain_bitvector(u_p, n_p);
+            //bit_size += bitsize_plain_bitvector(u_p, n_p);
+            bit_times++;
+	        } else { 
+            all_ones_times++;
+          }
+        }
+      }
+      cout << "EF " << ef_times << " BIT " << bit_times << " ALL_ONES " << all_ones_times 
+           << " " << ef_size << " " << bit_size << " "
+           << (double) ef_size / n << " " << (double) bit_size / n << " "
+           << only_blocks << " "
+           << (double) only_blocks / n << "\n";
+      return size;
+    }
     std::pair<std::vector<uint64_t>, uint64_t> optimal_partition(std::vector<uint64_t> &ones_bv, double eps1, double eps2){
       //fixed_cost = 2 * ceil_log2(u) + ceil_log2(n);
       uint64_t single_block_cost = cost_fun(u, n);
@@ -347,7 +372,7 @@ class pef_vector_opt {
         for (auto& window: windows) {
 
           assert(window.start() == i);
-          while (window._end < last_end) {
+          while (window.end() < last_end) {
             window.advance_end();
           }
 
@@ -395,19 +420,22 @@ class pef_vector_opt {
       //elias-fano
       } else if(type_encoding_block == 1) {
         B[i] = 1;
-        P[i] = new sd_vector<>(block_bv);
-        block_select[i] = new select_support_sd<1>((sd_vector<> *)P[i]);
-        block_rank[i] = new rank_support_sd<1>((sd_vector<> *)P[i]);
+        P[i] = new sdsl::sd_vector<>(block_bv);
+        block_select[i] = new sdsl::select_support_sd<1>((sdsl::sd_vector<> *)P[i]);
+        block_rank[i] = new sdsl::rank_support_sd<1>((sdsl::sd_vector<> *)P[i]);
       //rb
       } else if(type_encoding_block == 2) { 
         B[i] = 0;
-        P[i] = new bit_vector(block_bv);
-        block_select[i] = new select_support((bit_vector *)P[i]); 
-        block_rank[i] = new rank_support((bit_vector *)P[i]); 
+        P[i] = new sdsl::bit_vector(block_bv);
+        block_select[i] = new select_support((sdsl::bit_vector *)P[i]); 
+        block_rank[i] = new rank_support((sdsl::bit_vector *)P[i]); 
       }
     }
 
     pef_vector_opt(sdsl::bit_vector &bv, double eps1, double eps2) {
+      // setup fixed_cost 
+      fixed_cost = _fixed_cost;
+
       select_support select_1(&bv);
       rank_support rank_1(&bv);
       sdsl::bit_vector block_bv;
@@ -434,7 +462,7 @@ class pef_vector_opt {
       block_select.resize(nBlocks, NULL);
       block_rank.resize(nBlocks, NULL);
 
-      B = bit_vector(nBlocks, 0);
+      B = sdsl::bit_vector(nBlocks, 0);
 
       uint64_t start = 0;
       uint64_t first_elem = 1;
@@ -457,7 +485,7 @@ class pef_vector_opt {
         elements_of_L.push_back(temp);
         elements_of_E.push_back(amount_ones + (i == 0 ? 0 : elements_of_E[i - 1]));
 
-        uint64_t type_encoding_block = type_encoding(end - first_elem + 1, amount_ones);
+        uint64_t type_encoding_block = new_type_encoding(size_block, amount_ones);
         add_block(block_bv, type_encoding_block, i);
         start = end + 1;
         first_elem = partition[i];
@@ -477,19 +505,22 @@ class pef_vector_opt {
       }
       elements_of_L.push_back(temp);
       elements_of_E.push_back(amount_ones + (nBlocks == 1 ? 0 : elements_of_E[i - 1]));
-      uint64_t type_encoding_block = type_encoding(end - first_elem, amount_ones);
+      uint64_t type_encoding_block = new_type_encoding(size_block, amount_ones);
       add_block(block_bv, type_encoding_block, i);
 
-      L = sd_vector<>(elements_of_L.begin(), elements_of_L.end());
-      util::init_support(select_L, &L);
-      util::init_support(rank_L, &L);
+      L = sdsl::sd_vector<>(elements_of_L.begin(), elements_of_L.end());
+      sdsl::util::init_support(select_L, &L);
+      sdsl::util::init_support(rank_L, &L);
 
-      E = sd_vector<>(elements_of_E.begin(), elements_of_E.end());
-      util::init_support(select_E, &E);
-      util::init_support(rank_E, &E);
+      E = sdsl::sd_vector<>(elements_of_E.begin(), elements_of_E.end());
+      sdsl::util::init_support(select_E, &E);
+      sdsl::util::init_support(rank_E, &E);
     } 
 
     pef_vector_opt(std::vector<uint64_t> &pb, uint64_t universe, double eps1, double eps2) {
+      // setup fixed_cost 
+      fixed_cost = _fixed_cost;
+
       sdsl::bit_vector block_bv;
       std::vector<uint64_t> elements_of_L;
       std::vector<uint64_t> elements_of_E;
@@ -504,21 +535,39 @@ class pef_vector_opt {
       //-----------------------------
 
       nBlocks = partition.size(); // OJO, ver esto, el tamaño de ese vector debería ser el número de bloques
-      cout << nBlocks << " " << cost_opt << "\n";
+      cout << nBlocks << " " << cost_opt << " " << (double) cost_opt / n << "\n";
 
+ // this helps to test manually
+/*
+      nBlocks = 3;
+      partition.resize(3, 0);
+
+      partition[0] = 5;
+      partition[1] = 8;
+      partition[2] = 15;
+      partition = {186, 247, 327, 735, 783, 898, 1239, 1537, 1547, 1868, 1996, 2122, 
+                   2442, 2858, 3274, 3720, 4882, 5138, 5416, 5438, 6940, 8196, 8451, 
+                   8780, 8882, 9074, 9448, 10360, 11434, 11570, 13008, 13538, 13562, 
+                   14324, 14486, 14710, 15256, 15314, 15440, 15487, 15510, 16164, 
+                   16199, 19339, 19615, 19743, 19873, 19937, 19965, 20000};
+      nBlocks = 50;
+*/
       P.resize(nBlocks, NULL);
       block_select.resize(nBlocks, NULL);
       block_rank.resize(nBlocks, NULL);
 
-      B = bit_vector(nBlocks, 0);
+      B = sdsl::bit_vector(nBlocks, 0);
 
       uint64_t start = 0;
       uint64_t first_elem = 1;
 
       uint64_t last_elem, end, size_block, i = 0;
+      
+      uint64_t nani = 0;
       for(i = 0; i < nBlocks - 1; i++){
         last_elem = partition[i];
         end = pb[last_elem - 1 - 1];
+       
         size_block = end - start + 1;
 
         block_bv.resize(size_block);
@@ -533,11 +582,16 @@ class pef_vector_opt {
         elements_of_L.push_back(temp);
         elements_of_E.push_back(amount_ones + (i == 0 ? 0 : elements_of_E[i - 1]));
 
-        uint64_t type_encoding_block = type_encoding(end - pb[first_elem - 1] + 1, amount_ones);
+        //uint64_t type_encoding_block = new_type_encoding(end - pb[first_elem - 1] + 1, amount_ones);
+        //nani += cost_fun(end - pb[first_elem - 1] + 1, amount_ones);
+        uint64_t type_encoding_block = new_type_encoding(end - start + 1, amount_ones);
+        nani += cost_fun(end - start + 1, amount_ones);
+
         add_block(block_bv, type_encoding_block, i);
         start = end + 1;
         first_elem = partition[i];
       }
+
       // last block
       last_elem = partition[i];
       end = u;
@@ -553,16 +607,21 @@ class pef_vector_opt {
       }
       elements_of_L.push_back(temp);
       elements_of_E.push_back(amount_ones + (nBlocks == 1 ? 0 : elements_of_E[i - 1]));
-      uint64_t type_encoding_block = type_encoding(end - pb[first_elem - 1], amount_ones);
+      
+      //uint64_t type_encoding_block = new_type_encoding(end - pb[first_elem - 1], amount_ones);
+      //nani += cost_fun(end - pb[first_elem - 1], amount_ones);
+      uint64_t type_encoding_block = new_type_encoding(end - start, amount_ones);
+      nani += cost_fun(end - start, amount_ones);
+     
       add_block(block_bv, type_encoding_block, i);
-
-      L = sd_vector<>(elements_of_L.begin(), elements_of_L.end());
-      util::init_support(select_L, &L);
-      util::init_support(rank_L, &L);
-
-      E = sd_vector<>(elements_of_E.begin(), elements_of_E.end());
-      util::init_support(select_E, &E);
-      util::init_support(rank_E, &E);
+      cout << nBlocks << " " << nani << " " << (double) nani/n << "\n";
+      L = sdsl::sd_vector<>(elements_of_L.begin(), elements_of_L.end());
+      sdsl::util::init_support(select_L, &L);
+      sdsl::util::init_support(rank_L, &L);
+    
+      E = sdsl::sd_vector<>(elements_of_E.begin(), elements_of_E.end());
+      sdsl::util::init_support(select_E, &E);
+      sdsl::util::init_support(rank_E, &E);
     } 
 
     uint64_t select(uint64_t i){
@@ -571,10 +630,10 @@ class pef_vector_opt {
       uint64_t blk = rank_E(i);
       if (B[blk]) {
         if (blk == 0) {
-          return (*(select_support_sd<1> *)block_select[blk])(i);
+          return (*(sdsl::select_support_sd<1> *)block_select[blk])(i);
         } else {
           uint64_t i_block = i - select_E(blk);
-          return select_L(blk) + 1 + (*(select_support_sd<1> *)block_select[blk])(i_block); 
+          return select_L(blk) + 1 + (*(sdsl::select_support_sd<1> *)block_select[blk])(i_block); 
         }
       } else {
         if (P[blk]) {
@@ -611,11 +670,11 @@ class pef_vector_opt {
 
       if (B[blk]) {
         if(blk == 0){
-          rank_val += (*(rank_support_sd<1> *)block_rank[blk])(i);
+          rank_val += (*(sdsl::rank_support_sd<1> *)block_rank[blk])(i);
         } else {
           //obtain position in the block
           uint64_t i_block = i - 1 - select_L(blk);
-          rank_val += (*(rank_support_sd<1> *)block_rank[blk])(i_block);
+          rank_val += (*(sdsl::rank_support_sd<1> *)block_rank[blk])(i_block);
         }
       } else {
         if (P[blk]) {
