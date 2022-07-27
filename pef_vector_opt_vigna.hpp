@@ -90,7 +90,9 @@ class pef_vector_opt_vigna {
   uint64_t n; // set size (number of 1s in the bitvector)
   uint64_t nBlocks; 
     
+  uint64_t size_in_bits_auxiliar;
   public:
+    using size_type = size_t;
 
     pef_vector_opt_vigna() {;}
 
@@ -167,11 +169,11 @@ class pef_vector_opt_vigna {
       uint64_t size_E = bitsize_final_ef_vigna(u_E, n_E);
       uint64_t size_B = ((u_B / 64 + 1) * 64);
 
-      cout << u << " " << n << " " 
-           << size << " " << (double) size / n << " "
-           << size_L << " " << (double) size_L / n << " "
-           << size_E << " " << (double) size_E / n << " "
-           << size_B << " " << (double) size_B / n << " ";
+      //cout << u << " " << n << " " 
+      //     << size << " " << (double) size / n << " "
+      //     << size_L << " " << (double) size_L / n << " "
+      //     << size_E << " " << (double) size_E / n << " "
+      //     << size_B << " " << (double) size_B / n << " ";
       
       uint64_t ef_times = 0;
       uint64_t ef_size = 0;
@@ -221,12 +223,16 @@ class pef_vector_opt_vigna {
           }
         }
       }
-      cout << "EF " << ef_times << " BIT " << bit_times << " ALL_ONES " << all_ones_times 
-           << " " << ef_size << " " << bit_size << " "
-           << (double) ef_size / n << " " << (double) bit_size / n << " "
-           << only_blocks << " "
-           << (double) only_blocks / n << "\n";
+      //cout << "EF " << ef_times << " BIT " << bit_times << " ALL_ONES " << all_ones_times 
+      //     << " " << ef_size << " " << bit_size << " "
+      //     << (double) ef_size / n << " " << (double) bit_size / n << " "
+      //     << only_blocks << " "
+      //     << (double) only_blocks / n << "\n";
       return size;
+    }
+    
+    size_t serialize(std::ostream& out, sdsl::structure_tree_node *v = nullptr, const std::string &name = "") const {
+      return size_in_bits_auxiliar / 8;
     }
 
     std::pair<std::vector<uint64_t>, uint64_t> optimal_partition(std::vector<uint64_t> &ones_bv, double eps1, double eps2){
@@ -309,23 +315,9 @@ class pef_vector_opt_vigna {
         for(uint64_t i = 0; i < n; i++){
           ones_bv.push_back(select_1(i + 1));
         }
-        cout << u << " " << n << "\n";
-        print(ones_bv);
         //std::cout << "** OUT SELECTING ONES FANO\n";
 
-        if(u != 1283){
-          P[i] = new sux::bits::EliasFano<>(ones_bv, u);
-        } else {
-          vector<uint64_t> pb2 = {0,1,2,3,4,5,6,9,11,12,28,34,36,39,40,41,43,50,59,60,64,79,80,81,82,83,84,85,97,123,133,134,135,136,137,138,139,140,141,142,143,144,145,146,147,148,149,150,151,152,153,154,156,159,161,172,190,211,212,237,282,284,286,292,293,304,305,306,310,312,313,314,315,324,332,333,334,343,344,348,349,350,354,355,357,379,386,420,424,461,469,471,474,486,488,506,507,515,516,517,518,519,520,522,523,524,525,526,527,528,529,530,531,532,533,534,535,536,537,538,539,540,541,542,543,544,545,546,547,548,549,550,551,552,553,554,556,558,559,600,612,773,776,777,807,808,814,823,831,833,834,838,839,842,848,849,854,861,862,870,885,888,898,903,907,908,909,912,917,918,924,925,928,932,935,936,938,940,944,947,949,950,951,952,956,957,960,963,964,965,966,967,974,975,979,986,987,990,991,992,995,998,999,1005,1006,1010,1011,1014,1017,1018,1022,1023,1025,1029,1030,1031,1032,1036,1040,1041,1047,1049,1050,1052,1053,1054,1055,1057,1058,1061,1062,1065,1066,1067,1072,1073,1078,1079,1081,1084,1090,1091,1096,1098,1099,1100,1103,1104,1107,1109,1110,1114,1115,1118,1119,1124,1126,1128,1129,1131,1133,1134,1136,1140,1146,1148,1149,1150,1151,1152,1157,1160,1162,1163,1166,1170,1172,1173,1176,1178,1181,1184,1185,1186,1190,1191,1192,1193,1195,1201,1202,1208,1211,1215,1220,1221,1223,1224,1227,1231,1232,1233,1236,1239,1241,1243,1250,1256,1258,1261,1262,1267,1269,1271,1273,1274,1275,1276,1279,1282};
-          P[i] = new sux::bits::EliasFano<>(pb2, u);
-        }
-        if(u == 1283){
-
-          vector<uint64_t> pb2 = {0,1,2,3,4,5,6,9,11,12,28,34,36,39,40,41,43,50,59,60,64,79,80,81,82,83,84,85,97,123,133,134,135,136,137,138,139,140,141,142,143,144,145,146,147,148,149,150,151,152,153,154,156,159,161,172,190,211,212,237,282,284,286,292,293,304,305,306,310,312,313,314,315,324,332,333,334,343,344,348,349,350,354,355,357,379,386,420,424,461,469,471,474,486,488,506,507,515,516,517,518,519,520,522,523,524,525,526,527,528,529,530,531,532,533,534,535,536,537,538,539,540,541,542,543,544,545,546,547,548,549,550,551,552,553,554,556,558,559,600,612,773,776,777,807,808,814,823,831,833,834,838,839,842,848,849,854,861,862,870,885,888,898,903,907,908,909,912,917,918,924,925,928,932,935,936,938,940,944,947,949,950,951,952,956,957,960,963,964,965,966,967,974,975,979,986,987,990,991,992,995,998,999,1005,1006,1010,1011,1014,1017,1018,1022,1023,1025,1029,1030,1031,1032,1036,1040,1041,1047,1049,1050,1052,1053,1054,1055,1057,1058,1061,1062,1065,1066,1067,1072,1073,1078,1079,1081,1084,1090,1091,1096,1098,1099,1100,1103,1104,1107,1109,1110,1114,1115,1118,1119,1124,1126,1128,1129,1131,1133,1134,1136,1140,1146,1148,1149,1150,1151,1152,1157,1160,1162,1163,1166,1170,1172,1173,1176,1178,1181,1184,1185,1186,1190,1191,1192,1193,1195,1201,1202,1208,1211,1215,1220,1221,1223,1224,1227,1231,1232,1233,1236,1239,1241,1243,1250,1256,1258,1261,1262,1267,1269,1271,1273,1274,1275,1276,1279,1282};
-          sux::bits::EliasFano<> EF2(pb2, 1283);
-          cout << EF2.rank(1280) << "\n"; 
-        }
-        cout << (*(sux::bits::EliasFano<> *)P[i]).rank(u - 1) << "\n"; 
+        P[i] = new sux::bits::EliasFano<>(ones_bv, u);
         block_select[i] = NULL;
         block_rank[i] = NULL;
         ones_bv.clear();
@@ -422,6 +414,8 @@ class pef_vector_opt_vigna {
       
       L = sux::bits::EliasFano<>(elements_of_L, elements_of_L[elements_of_L.size() - 1] + 1);
       E = sux::bits::EliasFano<>(elements_of_E, elements_of_E[elements_of_E.size() - 1] + 1);
+      
+      size_in_bits_auxiliar = size_in_bits_formula();
     } 
 
     pef_vector_opt_vigna(std::vector<uint64_t> &pb, uint64_t universe, double eps1, double eps2) {
@@ -445,7 +439,7 @@ class pef_vector_opt_vigna {
       //std::cout << "BLOCKS SELECTED\n";
       nBlocks = partition.size(); // OJO, ver esto, el tamaño de ese vector debería ser el número de bloques
       cout << nBlocks << " " << cost_opt << " " << (double) cost_opt / n << "\n";
-      print(partition);
+      //print(partition);
 
       P.resize(nBlocks, NULL);
       block_select.resize(nBlocks, NULL);
@@ -506,6 +500,7 @@ class pef_vector_opt_vigna {
 
       E = sux::bits::EliasFano<>(elements_of_E, elements_of_E[elements_of_E.size() - 1] + 1);
 
+      size_in_bits_auxiliar = size_in_bits_formula();
       //std::cout << "FINAL PEF OPT\n";
     } 
 
