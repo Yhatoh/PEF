@@ -39,7 +39,10 @@ class pef_vector_opt {
   uint64_t n; // set size (number of 1s in the bitvector)
   uint64_t nBlocks; 
     
+  // this will be erased later
+  uint64_t size_in_bits_auxiliar;
   public:
+    using size_type = size_t;
 
     pef_vector_opt() {;}
 
@@ -185,11 +188,11 @@ class pef_vector_opt {
                     + 3 * sizeof(uint64_t) * 8
                     + nBlocks * sizeof(void *) * 8;
 */
-      cout << u << " " << n << " " 
-           << size << " " << (double) size / n << " "
-           << size_L << " " << (double) size_L / n << " "
-           << size_E << " " << (double) size_E / n << " "
-           << size_B << " " << (double) size_B / n << " ";
+      //cout << u << " " << n << " " 
+      //     << size << " " << (double) size / n << " "
+      //     << size_L << " " << (double) size_L / n << " "
+      //     << size_E << " " << (double) size_E / n << " "
+      //     << size_B << " " << (double) size_B / n << " ";
       
       uint64_t ef_times = 0;
       uint64_t ef_size = 0;
@@ -245,12 +248,16 @@ class pef_vector_opt {
           }
         }
       }
-      cout << "EF " << ef_times << " BIT " << bit_times << " ALL_ONES " << all_ones_times 
-           << " " << ef_size << " " << bit_size << " "
-           << (double) ef_size / n << " " << (double) bit_size / n << " "
-           << only_blocks << " "
-           << (double) only_blocks / n << "\n";
+      //cout << "EF " << ef_times << " BIT " << bit_times << " ALL_ONES " << all_ones_times 
+      //     << " " << ef_size << " " << bit_size << " "
+      //     << (double) ef_size / n << " " << (double) bit_size / n << " "
+      //     << only_blocks << " "
+      //     << (double) only_blocks / n << "\n";
       return size;
+    }
+    
+    size_t serialize(std::ostream& out, sdsl::structure_tree_node *v = nullptr, const std::string &name = "") const {
+      return size_in_bits_auxiliar / 8;
     }
     
     uint64_t size_in_bits_formula_no_select(){
@@ -515,6 +522,8 @@ class pef_vector_opt {
       E = sdsl::sd_vector<>(elements_of_E.begin(), elements_of_E.end());
       sdsl::util::init_support(select_E, &E);
       sdsl::util::init_support(rank_E, &E);
+
+      size_in_bits_auxiliar = size_in_bits_formula();
     } 
 
     pef_vector_opt(std::vector<uint64_t> &pb, uint64_t universe, double eps1, double eps2) {
@@ -622,6 +631,8 @@ class pef_vector_opt {
       E = sdsl::sd_vector<>(elements_of_E.begin(), elements_of_E.end());
       sdsl::util::init_support(select_E, &E);
       sdsl::util::init_support(rank_E, &E);
+      
+      size_in_bits_auxiliar = size_in_bits_formula();
     } 
 
     uint64_t select(uint64_t i){
