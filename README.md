@@ -1,3 +1,9 @@
+# Requirement
+
+To use this version of PEF, you have to use this versions of sdsl-lite, that has a little difference.
+
+https://github.com/Yhatoh/sdsl-lite
+
 # PEF
 
 ## PEF Uniform
