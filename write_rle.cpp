@@ -1,15 +1,17 @@
-//#include "pef_vector_unif.hpp"
-#include "zombit/include/zombit_vector.hpp"
-#include "zombit/include/oz_vector.hpp"
-#include "pef_vector_opt.hpp"
-#include "pef_vector_opt_vigna.hpp"
-#include "s18_vector/s18/head/s18_vector.hpp"
-#include "randomer.hpp"
+using namespace std;
+
+#include <sdsl/vectors.hpp>
+#include <sdsl/bit_vectors.hpp>
+#include <cinttypes>
+#include <assert.h> 
+
+#include "/home/gcarmona/PEF/randomer.hpp"
+
+#include <chrono>
 
 #include <vector>
 #include <sdsl/vectors.hpp>
 #include <sdsl/bit_vectors.hpp>
-#include <chrono>
 #include <cinttypes>
 #include <assert.h> 
 
@@ -32,8 +34,11 @@ int main(int argc, char** argv){
   for(uint64_t i = 1; i < argc; i += 2){
 
     double total_time_span_hyb = 0;
-    double total_time_span_oz = 0;
     double total_time_span_zombit = 0;
+    double total_time_span_rle_32 = 0;
+    double total_time_span_rle_64 = 0;
+    double total_time_span_rle_128 = 0;
+    double total_time_span_rle_256 = 0;
     double total_time_span_sd = 0;
     double total_time_span_s18_8 = 0;
     double total_time_span_s18_16 = 0;
@@ -60,7 +65,10 @@ int main(int argc, char** argv){
      
     double total_time_span_hyb_s = 0;
     double total_time_span_zombit_s = 0;
-    double total_time_span_oz_s = 0;
+    double total_time_span_rle_32_s = 0;
+    double total_time_span_rle_64_s = 0;
+    double total_time_span_rle_128_s = 0;
+    double total_time_span_rle_256_s = 0;
     double total_time_span_sd_s = 0;
     double total_time_span_s18_8_s = 0;
     double total_time_span_s18_16_s = 0;
@@ -87,7 +95,10 @@ int main(int argc, char** argv){
 
     double total_size_hyb = 0;
     double total_size_zombit = 0;
-    double total_size_oz = 0;
+    double total_size_rle_32 = 0;
+    double total_size_rle_64 = 0;
+    double total_size_rle_128 = 0;
+    double total_size_rle_256 = 0;
     double total_size_sd = 0;
     double total_size_s18_8 = 0;
     double total_size_s18_16 = 0;
@@ -114,7 +125,10 @@ int main(int argc, char** argv){
     
     double total_size_hyb_1 = 0;
     double total_size_zombit_1 = 0;
-    double total_size_oz_1 = 0;
+    double total_size_rle_32_1 = 0;
+    double total_size_rle_64_1 = 0;
+    double total_size_rle_128_1 = 0;
+    double total_size_rle_256_1 = 0;
     double total_size_sd_1 = 0;
     double total_size_s18_8_1 = 0;
     double total_size_s18_16_1 = 0;
@@ -141,7 +155,10 @@ int main(int argc, char** argv){
     
     double total_size_hyb_bit = 0;
     double total_size_zombit_bit = 0;
-    double total_size_oz_bit = 0;
+    double total_size_rle_32_bit = 0;
+    double total_size_rle_64_bit = 0;
+    double total_size_rle_128_bit = 0;
+    double total_size_rle_256_bit = 0;
     double total_size_sd_bit = 0;
     double total_size_s18_8_bit = 0;
     double total_size_s18_16_bit = 0;
@@ -216,49 +233,6 @@ int main(int argc, char** argv){
         vrank.push_back(r_randomer());
         vselect.push_back(s_randomer());
       }
-      {
-        runs_vectors::oz_vector oz(bv);
-        runs_vectors::rank_support_oz<1> rank_oz(&oz);
-        runs_vectors::select_support_oz<1> select_oz(&oz);
-        //cout << "SIZE HYB VECTOR " 
-        //     << (double) (sdsl::size_in_bytes(hyb) + sdsl::size_in_bytes(rank_hyb)) * 8 / pb.size() << " "
-        //     << sdsl::size_in_bytes(hyb) << " " << (double) sdsl::size_in_bytes(hyb) / pb.size() << " " 
-        //     << sdsl::size_in_bytes(rank_hyb) << " " << (double) sdsl::size_in_bytes(rank_hyb) / pb.size() << " " 
-        //    << "\n";
-        total_size_oz_1 += (double) (sdsl::size_in_bytes(oz) + sdsl::size_in_bytes(select_oz) + sdsl::size_in_bytes(rank_oz)) * 8 / pb.size();
-        total_size_oz_bit += (double) (sdsl::size_in_bytes(oz) + sdsl::size_in_bytes(select_oz) + sdsl::size_in_bytes(rank_oz)) * 8 / universe;
-        total_size_oz += (double) (sdsl::size_in_bytes(oz) + sdsl::size_in_bytes(select_oz) + sdsl::size_in_bytes(rank_oz)) * 8;
-        //ofstream file_pef_hyb("/data/PEF_TESTED_ED/HYB.bin", std::ios::out | ios::binary );
-        //hyb.serialize(file_pef_hyb);
-        //file_pef_hyb.close();
-        chrono::high_resolution_clock::time_point start, stop;
-        double total_time = 0;
-        chrono::duration< double > time_span;
-        uint64_t Q = 0;
-        start = chrono::high_resolution_clock::now();
-        for(uint64_t q = 0; q < n_queries; q++){
-          Q += rank_oz(vrank[q]);
-        }
-        stop = chrono::high_resolution_clock::now();
-        time_span = chrono::duration_cast< chrono::microseconds >(stop - start);
-        total_time = time_span.count();
-        //cout << "HYB VECTOR RANK: " << Q << " " << total_time << "\n";
-        total_time_span_oz += total_time;
-        
-        chrono::high_resolution_clock::time_point start_s, stop_s;
-        double total_time_s = 0;
-        chrono::duration< double > time_span_s;
-        uint64_t Q_s = 0;
-        start_s = chrono::high_resolution_clock::now();
-        for(uint64_t q = 0; q < n_queries; q++){
-          Q_s += select_oz(vselect[q]);
-        }
-        stop_s = chrono::high_resolution_clock::now();
-        time_span_s = chrono::duration_cast< chrono::microseconds >(stop_s - start_s);
-        total_time_s = time_span_s.count();
-        //cout << "SD VECTOR SELECT: " << Q_s << " " << total_time_s  << " " << total_time_s << "\n";
-        total_time_span_oz_s += total_time_s;
-      }
       /*
       {
         runs_vectors::zombit_vector zombit(bv);
@@ -287,9 +261,176 @@ int main(int argc, char** argv){
         total_time = time_span.count();
         //cout << "HYB VECTOR RANK: " << Q << " " << total_time << "\n";
         total_time_span_zombit += total_time;
-
+      }*/
+      /*
+      {
+        sdsl::rle_vector<32> sd(bv);
+        sdsl::rank_support_rle<1, 32> rank_sd(&sd);
+        sdsl::select_support_rle<32> select_sd(&sd);
+        //cout << "SIZE SD VECTOR " 
+        //     << (double) (sdsl::size_in_bytes(sd) + sdsl::size_in_bytes(rank_sd) + sdsl::size_in_bytes(select_sd)) * 8 / pb.size() << " "
+        //     << sdsl::size_in_bytes(sd) << " " << (double) sdsl::size_in_bytes(sd) / pb.size() << " " 
+        //     << sdsl::size_in_bytes(rank_sd) << " " << (double) sdsl::size_in_bytes(rank_sd) / pb.size() << " " 
+        //     << sdsl::size_in_bytes(select_sd) << " " << (double) sdsl::size_in_bytes(select_sd) / pb.size() << " " 
+        //     << "\n";
+        total_size_rle_32_1 += (double) (sdsl::size_in_bytes(sd) + sdsl::size_in_bytes(rank_sd) + sdsl::size_in_bytes(select_sd)) * 8 / pb.size();
+        total_size_rle_32_bit += (double) (sdsl::size_in_bytes(sd) + sdsl::size_in_bytes(rank_sd) + sdsl::size_in_bytes(select_sd)) * 8 / universe;
+        total_size_rle_32 += (double) (sdsl::size_in_bytes(sd) + sdsl::size_in_bytes(rank_sd) + sdsl::size_in_bytes(select_sd)) * 8;
+        chrono::high_resolution_clock::time_point start, stop;
+        double total_time = 0;
+        chrono::duration< double > time_span;
+        uint64_t Q = 0;
+        start = chrono::high_resolution_clock::now();
+        for(uint64_t q = 0; q < n_queries; q++){
+          Q += rank_sd(vrank[q]);
+        }
+        stop = chrono::high_resolution_clock::now();
+        time_span = chrono::duration_cast< chrono::microseconds >(stop - start);
+        total_time = time_span.count();
+        total_time_span_rle_32 += total_time;
+        //cout << "SD VECTOR 32 RANK: " << Q << " " << total_time << "\n";
+      
+        chrono::high_resolution_clock::time_point start_s, stop_s;
+        double total_time_s = 0;
+        chrono::duration< double > time_span_s;
+        uint64_t Q_s = 0;
+        start_s = chrono::high_resolution_clock::now();
+        for(uint64_t q = 0; q < n_queries; q++){
+          Q_s += select_sd(vselect[q]);
+        }
+        stop_s = chrono::high_resolution_clock::now();
+        time_span_s = chrono::duration_cast< chrono::microseconds >(stop_s - start_s);
+        total_time_s = time_span_s.count();
+        total_time_span_rle_32_s += total_time_s;
+        //cout << "SD VECTOR 32 SELECT: " << Q_s << " " << total_time_s << "\n";
       }
       */
+      {
+        sdsl::rle_vector<64> sd(bv);
+        sdsl::rank_support_rle<1, 64> rank_sd(&sd);
+        sdsl::select_support_rle<64> select_sd(&sd);
+        //cout << "SIZE SD VECTOR " 
+        //     << (double) (sdsl::size_in_bytes(sd) + sdsl::size_in_bytes(rank_sd) + sdsl::size_in_bytes(select_sd)) * 8 / pb.size() << " "
+        //     << sdsl::size_in_bytes(sd) << " " << (double) sdsl::size_in_bytes(sd) / pb.size() << " " 
+        //     << sdsl::size_in_bytes(rank_sd) << " " << (double) sdsl::size_in_bytes(rank_sd) / pb.size() << " " 
+        //     << sdsl::size_in_bytes(select_sd) << " " << (double) sdsl::size_in_bytes(select_sd) / pb.size() << " " 
+        //     << "\n";
+        total_size_rle_64_1 += (double) (sdsl::size_in_bytes(sd) + sdsl::size_in_bytes(rank_sd) + sdsl::size_in_bytes(select_sd)) * 8 / pb.size();
+        total_size_rle_64_bit += (double) (sdsl::size_in_bytes(sd) + sdsl::size_in_bytes(rank_sd) + sdsl::size_in_bytes(select_sd)) * 8 / universe;
+        total_size_rle_64 += (double) (sdsl::size_in_bytes(sd) + sdsl::size_in_bytes(rank_sd) + sdsl::size_in_bytes(select_sd)) * 8;
+        chrono::high_resolution_clock::time_point start, stop;
+        double total_time = 0;
+        chrono::duration< double > time_span;
+        uint64_t Q = 0;
+        start = chrono::high_resolution_clock::now();
+        for(uint64_t q = 0; q < n_queries; q++){
+          Q += rank_sd(vrank[q]);
+        }
+        stop = chrono::high_resolution_clock::now();
+        time_span = chrono::duration_cast< chrono::microseconds >(stop - start);
+        total_time = time_span.count();
+        total_time_span_rle_64 += total_time;
+        //cout << "SD VECTOR 64 RANK: " << Q << " " << total_time << "\n";
+      
+        chrono::high_resolution_clock::time_point start_s, stop_s;
+        double total_time_s = 0;
+        chrono::duration< double > time_span_s;
+        uint64_t Q_s = 0;
+        start_s = chrono::high_resolution_clock::now();
+        for(uint64_t q = 0; q < n_queries; q++){
+          Q_s += select_sd(vselect[q]);
+        }
+        stop_s = chrono::high_resolution_clock::now();
+        time_span_s = chrono::duration_cast< chrono::microseconds >(stop_s - start_s);
+        total_time_s = time_span_s.count();
+        total_time_span_rle_64_s += total_time_s;
+        //cout << "SD VECTOR 64 SELECT: " << Q_s << " " << total_time_s << "\n";
+      }
+
+      /*
+      {
+        sdsl::rle_vector<128> sd(bv);
+        sdsl::rank_support_rle<1, 128> rank_sd(&sd);
+        sdsl::select_support_rle<128> select_sd(&sd);
+        //cout << "SIZE SD VECTOR " 
+        //     << (double) (sdsl::size_in_bytes(sd) + sdsl::size_in_bytes(rank_sd) + sdsl::size_in_bytes(select_sd)) * 8 / pb.size() << " "
+        //     << sdsl::size_in_bytes(sd) << " " << (double) sdsl::size_in_bytes(sd) / pb.size() << " " 
+        //     << sdsl::size_in_bytes(rank_sd) << " " << (double) sdsl::size_in_bytes(rank_sd) / pb.size() << " " 
+        //     << sdsl::size_in_bytes(select_sd) << " " << (double) sdsl::size_in_bytes(select_sd) / pb.size() << " " 
+        //     << "\n";
+        total_size_rle_128_1 += (double) (sdsl::size_in_bytes(sd) + sdsl::size_in_bytes(rank_sd) + sdsl::size_in_bytes(select_sd)) * 8 / pb.size();
+        total_size_rle_128_bit += (double) (sdsl::size_in_bytes(sd) + sdsl::size_in_bytes(rank_sd) + sdsl::size_in_bytes(select_sd)) * 8 / universe;
+        total_size_rle_128 += (double) (sdsl::size_in_bytes(sd) + sdsl::size_in_bytes(rank_sd) + sdsl::size_in_bytes(select_sd)) * 8;
+        chrono::high_resolution_clock::time_point start, stop;
+        double total_time = 0;
+        chrono::duration< double > time_span;
+        uint64_t Q = 0;
+        start = chrono::high_resolution_clock::now();
+        for(uint64_t q = 0; q < n_queries; q++){
+          Q += rank_sd(vrank[q]);
+        }
+        stop = chrono::high_resolution_clock::now();
+        time_span = chrono::duration_cast< chrono::microseconds >(stop - start);
+        total_time = time_span.count();
+        total_time_span_rle_128 += total_time;
+        //cout << "SD VECTOR 128 RANK: " << Q << " " << total_time << "\n";
+      
+        chrono::high_resolution_clock::time_point start_s, stop_s;
+        double total_time_s = 0;
+        chrono::duration< double > time_span_s;
+        uint64_t Q_s = 0;
+        start_s = chrono::high_resolution_clock::now();
+        for(uint64_t q = 0; q < n_queries; q++){
+          Q_s += select_sd(vselect[q]);
+        }
+        stop_s = chrono::high_resolution_clock::now();
+        time_span_s = chrono::duration_cast< chrono::microseconds >(stop_s - start_s);
+        total_time_s = time_span_s.count();
+        total_time_span_rle_128_s += total_time_s;
+        //cout << "SD VECTOR 128 SELECT: " << Q_s << " " << total_time_s << "\n";
+      }
+      {
+        sdsl::rle_vector<256> sd(bv);
+        sdsl::rank_support_rle<1, 256> rank_sd(&sd);
+        sdsl::select_support_rle<256> select_sd(&sd);
+        //cout << "SIZE SD VECTOR " 
+        //     << (double) (sdsl::size_in_bytes(sd) + sdsl::size_in_bytes(rank_sd) + sdsl::size_in_bytes(select_sd)) * 8 / pb.size() << " "
+        //     << sdsl::size_in_bytes(sd) << " " << (double) sdsl::size_in_bytes(sd) / pb.size() << " " 
+        //     << sdsl::size_in_bytes(rank_sd) << " " << (double) sdsl::size_in_bytes(rank_sd) / pb.size() << " " 
+        //     << sdsl::size_in_bytes(select_sd) << " " << (double) sdsl::size_in_bytes(select_sd) / pb.size() << " " 
+        //     << "\n";
+        total_size_rle_256_1 += (double) (sdsl::size_in_bytes(sd) + sdsl::size_in_bytes(rank_sd) + sdsl::size_in_bytes(select_sd)) * 8 / pb.size();
+        total_size_rle_256_bit += (double) (sdsl::size_in_bytes(sd) + sdsl::size_in_bytes(rank_sd) + sdsl::size_in_bytes(select_sd)) * 8 / universe;
+        total_size_rle_256 += (double) (sdsl::size_in_bytes(sd) + sdsl::size_in_bytes(rank_sd) + sdsl::size_in_bytes(select_sd)) * 8;
+        chrono::high_resolution_clock::time_point start, stop;
+        double total_time = 0;
+        chrono::duration< double > time_span;
+        uint64_t Q = 0;
+        start = chrono::high_resolution_clock::now();
+        for(uint64_t q = 0; q < n_queries; q++){
+          Q += rank_sd(vrank[q]);
+        }
+        stop = chrono::high_resolution_clock::now();
+        time_span = chrono::duration_cast< chrono::microseconds >(stop - start);
+        total_time = time_span.count();
+        total_time_span_rle_256 += total_time;
+        //cout << "SD VECTOR 256 RANK: " << Q << " " << total_time << "\n";
+      
+        chrono::high_resolution_clock::time_point start_s, stop_s;
+        double total_time_s = 0;
+        chrono::duration< double > time_span_s;
+        uint64_t Q_s = 0;
+        start_s = chrono::high_resolution_clock::now();
+        for(uint64_t q = 0; q < n_queries; q++){
+          Q_s += select_sd(vselect[q]);
+        }
+        stop_s = chrono::high_resolution_clock::now();
+        time_span_s = chrono::duration_cast< chrono::microseconds >(stop_s - start_s);
+        total_time_s = time_span_s.count();
+        total_time_span_rle_256_s += total_time_s;
+        //cout << "SD VECTOR 256 SELECT: " << Q_s << " " << total_time_s << "\n";
+      }
+    */
       /*
       {
         sdsl::hyb_vector<> hyb(bv);
@@ -1475,11 +1616,26 @@ int main(int argc, char** argv){
     
     rf.close();
     cout << filepath << " " << amount_bv << "\n";
-    cout << "OZ\n";
-    cout << total_size_oz << " " << total_size_oz / (double) amount_bv << " " << total_size_oz_1 / (double) amount_bv << " " << total_size_oz_bit / (double) amount_bv << "\n";
-    cout << total_time_span_oz << " " << total_time_span_oz / (double) amount_bv << "\n";
-    cout << total_time_span_oz_s << " "  << total_time_span_oz_s / (double) amount_bv  << "\n";
- 
+    cout << "RLE 32\n";
+    cout << total_size_rle_32 << " " << total_size_rle_32 / (double) amount_bv << " " << total_size_rle_32_1 / (double) amount_bv << " " << total_size_rle_32_bit / (double) amount_bv << "\n";
+    cout << total_time_span_rle_32 << " " << total_time_span_rle_32 / (double) amount_bv << "\n";
+    cout << total_time_span_rle_32_s << " " << total_time_span_rle_32_s / (double) amount_bv << "\n";
+
+    cout << "RLE 64\n";
+    cout << total_size_rle_64 << " " << total_size_rle_64 / (double) amount_bv << " " << total_size_rle_64_1 / (double) amount_bv << " " << total_size_rle_64_bit / (double) amount_bv << "\n";
+    cout << total_time_span_rle_64 << " " << total_time_span_rle_64 / (double) amount_bv << "\n";
+    cout << total_time_span_rle_64_s << " " << total_time_span_rle_64_s / (double) amount_bv << "\n";
+
+    cout << "RLE 128\n";
+    cout << total_size_rle_128 << " " << total_size_rle_128 / (double) amount_bv << " " << total_size_rle_128_1 / (double) amount_bv << " " << total_size_rle_128_bit / (double) amount_bv << "\n";
+    cout << total_time_span_rle_128 << " " << total_time_span_rle_128 / (double) amount_bv << "\n";
+    cout << total_time_span_rle_128_s << " " << total_time_span_rle_128_s / (double) amount_bv << "\n";
+
+    cout << "RLE 256\n";
+    cout << total_size_rle_256 << " " << total_size_rle_256 / (double) amount_bv << " " << total_size_rle_256_1 / (double) amount_bv << " " << total_size_rle_256_bit / (double) amount_bv << "\n";
+    cout << total_time_span_rle_256 << " " << total_time_span_rle_256 / (double) amount_bv << "\n";
+    cout << total_time_span_rle_256_s << " " << total_time_span_rle_256_s / (double) amount_bv << "\n";
+
 
     /*
     cout << "ZOMBIT\n";
@@ -1605,8 +1761,6 @@ int main(int argc, char** argv){
     cout << "PEF VIGNA 2048\n";
     cout << total_size_pef_vigna_2048 << " " << total_size_pef_vigna_2048 / (double) amount_bv << " " << total_size_pef_vigna_2048_1 / (double) amount_bv << " " << total_size_pef_vigna_2048_bit / (double) amount_bv << "\n";
     cout << total_time_span_pef_vigna_2048 << " " << total_time_span_pef_vigna_2048 / (double) amount_bv << "\n";
-    cout << total_time_span_pef_vigna_2048_s << " " << total_time_span_pef_vigna_2048_s / (double) amount_bv << "\n"; }
-  */
-}
+    cout << total_time_span_pef_vigna_2048_s << " " << total_time_span_pef_vigna_2048_s / (double) amount_bv << "\n";*/ }
   return 0;
 }
