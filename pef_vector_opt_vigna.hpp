@@ -206,10 +206,9 @@ class pef_vector_opt_vigna {
           if (P[i]) {
 	          uint64_t u_p = (*(sdsl::bit_vector *)P[i]).size();
             uint64_t n_p = (*(rank_support_c *)block_rank[i])(u_p);
-            size += bits_built_bit_vector(u_p, n_p, *(select_support_c *)block_select[i]);
-            bit_size += bits_built_bit_vector(u_p, n_p, *(select_support_c *)block_select[i]);
-            //only_blocks += bits_built_bit_vector(u_p, n_p, *(select_support_c *)block_select[i]);
-            only_blocks += bits_built_bit_vector_no_select(u_p, n_p);
+            size += bits_built_bit_vector<rank_support_c>(u_p, n_p, *(select_support_c *)block_select[i]);
+            bit_size += bits_built_bit_vector<rank_support_c>(u_p, n_p, *(select_support_c *)block_select[i]);
+            only_blocks += bits_built_bit_vector_no_select<rank_support_c>(u_p, n_p);
             
             //size += bits_bit_vector(u_p, n_p);
             //bit_size += bits_bit_vector(u_p, n_p);

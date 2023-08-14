@@ -328,14 +328,46 @@ uint64_t bits_bit_vector(uint64_t u, uint64_t n){
   return bits_bv + bits_select + bits_rank;
 }
 
-uint64_t bits_built_bit_vector(uint64_t u, uint64_t n, sdsl::select_support_mcl<1> &select){
+/*uint64_t bits_built_bit_vector(uint64_t u, uint64_t n, sdsl::select_support_mcl<1> &select){
+  uint64_t bits_bv = 64 * (u / 64 + 1);
+  uint64_t bits_select = bits_built_select_support_mcl(u, n, select);
+  uint64_t bits_rank = bits_rank_support_v(u, n);
+  return bits_bv + bits_select + bits_rank;
+}*/
+
+template<class T> uint64_t bits_built_bit_vector (uint64_t u, uint64_t n, sdsl::select_support_mcl<1> &select);
+
+template<> uint64_t bits_built_bit_vector<sdsl::rank_support_v5<1>> (uint64_t u, uint64_t n, sdsl::select_support_mcl<1> &select) {
+  uint64_t bits_bv = 64 * (u / 64 + 1);
+  uint64_t bits_select = bits_built_select_support_mcl(u, n, select);
+  uint64_t bits_rank = bits_rank_support_v5(u, n);
+  return bits_bv + bits_select + bits_rank;
+}
+
+template<> uint64_t bits_built_bit_vector<sdsl::rank_support_v<1>> (uint64_t u, uint64_t n, sdsl::select_support_mcl<1> &select) {
   uint64_t bits_bv = 64 * (u / 64 + 1);
   uint64_t bits_select = bits_built_select_support_mcl(u, n, select);
   uint64_t bits_rank = bits_rank_support_v(u, n);
   return bits_bv + bits_select + bits_rank;
 }
 
-uint64_t bits_built_bit_vector_no_select(uint64_t u, uint64_t n){
+/*uint64_t bits_built_bit_vector_no_select(uint64_t u, uint64_t n){
+  uint64_t bits_bv = 64 * (u / 64 + 1);
+  uint64_t bits_select = 0;//bits_built_select_support_mcl(u, n, select);
+  uint64_t bits_rank = bits_rank_support_v(u, n);
+  return bits_bv + bits_select + bits_rank;
+}*/
+
+template<class T > uint64_t bits_built_bit_vector_no_select(uint64_t u, uint64_t n);
+
+template<> uint64_t bits_built_bit_vector_no_select<sdsl::rank_support_v5<1>> (uint64_t u, uint64_t n) {
+  uint64_t bits_bv = 64 * (u / 64 + 1);
+  uint64_t bits_select = 0;//bits_built_select_support_mcl(u, n, select);
+  uint64_t bits_rank = bits_rank_support_v5(u, n);
+  return bits_bv + bits_select + bits_rank;
+}
+
+template<> uint64_t bits_built_bit_vector_no_select<sdsl::rank_support_v<1>> (uint64_t u, uint64_t n) {
   uint64_t bits_bv = 64 * (u / 64 + 1);
   uint64_t bits_select = 0;//bits_built_select_support_mcl(u, n, select);
   uint64_t bits_rank = bits_rank_support_v(u, n);
